@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import division
+
 import gui
 import world
 
@@ -15,7 +17,7 @@ world = World()
 gui = Gui(world)
 
 while world.is_playing():
-    time = clock.tick(40)
+    time = clock.tick(40) / 1000
 
     gui.update(time)
     world.update(time)

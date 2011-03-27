@@ -10,8 +10,6 @@ class World:
         self.sight = Sight(self, settings.target_position)
 
         self.targets = []
-        self.targets_destroyed = []
-        self.targets_
         
     def get_map(self):
         return self.map
@@ -21,8 +19,6 @@ class World:
 
     def get_targets(self):
         return self.targets
-
-    def get_
 
     def update(self, time):
         self.map.update(time)
@@ -54,9 +50,9 @@ class Sprite:
     directly instantiated. """
 
     def __init__(self, position, velocity, acceleration):
-        self.set_position(position)
-        self.set_velocity(velocity)
-        self.set_acceleration(acceleration)
+        self.position = position
+        self.velocity = velocity
+        self.acceleration = acceleration
 
     def update(self, time):
         self.velocity += self.acceleration * time
@@ -71,18 +67,6 @@ class Sprite:
     def get_acceleration(self):
         return self.acceleration
 
-    def set_position(self, position):
-        assert isinstance(position, Vector)
-        self.position = position
-
-    def set_velocity(self, velocity):
-        assert isinstance(velocity, Vector)
-        self.velocity = velocity
-
-    def set_acceleration(self, acceleration):
-        assert isinstance(acceleration, Vector)
-        self.acceleration = acceleration
-
 class Sight(Sprite):
     """ Represents a player's sight.  The motion of these objects is promarily
     controlled by the player, but they will bounce off of walls. """
@@ -91,26 +75,47 @@ class Sight(Sprite):
         Sprite.__init__(self, position, Vector.null(), Vector.null())
         self.world = world
 
-    """ 
-    def update(self, time):
-        Sprite.update(self, time)
+        self.drag = settings.target_drag
+        self.power = settings.target_power
 
+        self.direction = Vector.null()
+
+    def update(self, time):
         position = self.position
         boundary = self.world.get_map().get_size()
 
-        bounce = Vector(1, 1)
-        vertical_bounce = Vector(0, -1)
-        horizontal_bounce = Vector(-1, 0)
+        bounce = False
+        vx, vy = self.velocity
 
+        # Check for collisions against the walls.
         if position.y < boundary.top or position.y > boundary.bottom:
-            bounce = bounce * vertical_bounce
+            bounce = True
+            vy = -vy
 
         if position.x < boundary.left or position.x > boundary.right:
-            bounce = bounce * horizontal_bounce
+            bounce = True
+            vx = -vx
 
-        self.velocity = self.velocity * bounce
-        self.position = self.velocity * time
-        """
+        # If there is a bounce, flip the velocity and move back onto the
+        # screen.
+        if bounce:
+            self.velocity = Vector(vx, vy)
+            self.position += self.velocity * time
+
+        # Set the acceleration.
+        force = self.power * self.direction
+        drag = -self.drag * self.velocity
+
+        self.acceleration = force + drag
+
+        # Update the physics as usual.
+        Sprite.update(self, time)
+
+    def accelerate(self, direction):
+        try:
+            self.direction = direction.normal
+        except NullVectorError:
+            self.direction = Vector.null()
 
 class Target(Sprite):
     """ Represents a target that players can shoot at.  These objects will

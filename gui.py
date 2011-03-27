@@ -45,23 +45,19 @@ class Gui:
                 #print 'JOYAXISMOTION   ', event.axis, event.value
                 # X axis {{{4
                 # Right = 1.0, Left = -1.0
+                sight = self.world.get_sight()
+
                 if 0 == event.axis:
                     #joystick_y = self.joystick.get_axis(1)
-                    joystick_y = 0
-                    acceleration = vector.Vector(event.value, joystick_y)
-                    acceleration *= .001
-                    sight = self.world.get_sight()
-                    sight.set_acceleration(acceleration)
+                    direction = vector.Vector(event.value, 0)
+                    sight.accelerate(direction)
 
                 # Y axis {{{4
                 # Backwards = 1.0, Forwards = -1.0
                 if 1 == event.axis:
                     #joystick_x = self.joystick.get_axis(0)
-                    joystick_x = 0
-                    acceleration = vector.Vector(joystick_x, event.value)
-                    acceleration *= .001
-                    sight = self.world.get_sight()
-                    sight.set_acceleration(acceleration)
+                    direction = vector.Vector(0, event.value)
+                    sight.accelerate(direction)
 
                 # Rotator dial thingy {{{4
                 # Down = 1.0, Up = -1.0
