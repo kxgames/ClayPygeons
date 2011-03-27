@@ -4,7 +4,7 @@ import gui
 import world
 
 import pygame
-from pygame.locals.import *
+from pygame.locals import *
 
 from gui import Gui
 from world import World
@@ -12,8 +12,7 @@ from world import World
 clock = pygame.time.Clock()
 
 world = World()
-gui = Gui(screen, world)
-network = Network(world)
+gui = Gui(world)
 
 while world.is_playing():
     time = clock.tick(40)
