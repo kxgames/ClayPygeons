@@ -9,13 +9,14 @@ import vector
 
 class Gui:
     # def __init__ (screen_size, world): {{{1
-    def __init__ (screen_size, world):
+    def __init__ (map, world):
+        self.map = map
         self.world = world
 
         pygame.init()
 
-        self.size = screen_size
-        screen = pygame.display.set_mode(self.size)
+        self.size = self.map.get_size().get_pygame().size
+        self.screen = pygame.display.set_mode(self.size)
 
         if pygame.joystick.get_count() == 0:
             print "No joystick! Aborting...."
@@ -23,12 +24,12 @@ class Gui:
         else:
             print pygame.joystick.get_count()
 
-        joystick = pygame.joystick.Joystick(0)
-        joystick.init()
+        self.joystick = pygame.joystick.Joystick(0)
+        self.joystick.init()
 
     # def update (self, time): {{{1
     def update (self, time):
-        screen.fill ((0,0,0))
+        self.screen.fill ((0,0,0))
         # Get user input {{{2
         for event in pygame.event.get():
             # Quit {{{3
@@ -41,19 +42,36 @@ class Gui:
             
             # Joystick input {{{3
             if event.type == pygame.JOYAXISMOTION:
-                if event.joy == joystick.get_id():
-                    print 'JOYAXISMOTION   ', event.axis, event.value
-                    #self.world.
+                print 'JOYAXISMOTION   ', event.axis, event.value
+                # X axis {{{4
+                # Right = 1.0, Left = -1.0
+                if 0 == event.axis:
+                    joystick_y = self.joystick.get_axis(1)
+                    sight = self.world.get_sight()
+                    sight.set_acceleration(event.value, joystick_y)
+
+                # Y axis {{{4
+                # Backwards = 1.0, Forwards = -1.0
+                if 1 == event.axis:
+                    joystick_x = self.joystick.get_axis(0)
+                    sight = self.world.get_sight()
+                    sight.set_acceleration(joystick_x, event.value)
+
+                # Rotator dial thingy {{{4
+                # Down = 1.0, Up = -1.0
+                if 2 == event.axis:
+                    pass
+                #}}}4
             #if event.type == pygame.JOYBALLMOTION:
             #if event.type == pygame.JOYHATMOTION:
             if event.type == pygame.JOYBUTTONUP:
-                if event.joy == joystick.get_id():
-                    print 'JOYBUTTONUP   ', event.button
+                print 'JOYBUTTONUP   ', event.button
             if event.type == pygame.JOYBUTTONDOWN:
-                if event.joy == joystick.get_id():
-                    print 'JOYBUTTONDOWN   ', event.button
+                print 'JOYBUTTONDOWN   ', event.button
 
-
+        sight = self.word.get_sight()
+        sight_position = sight.get_position().get_pygame()
+        pygame.draw.circle(self.screen, (255, 255, 255), sight_position, 10)
 
         pygame.display.flip()
         pygame.time.wait(50)
