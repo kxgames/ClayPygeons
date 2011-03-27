@@ -10,6 +10,8 @@ class World:
         self.sight = Target(self, setting.target_position)
 
         self.targets = []
+        self.targets_destroyed = []
+        self.targets_
         
     def get_map(self):
         return self.map
@@ -19,6 +21,8 @@ class World:
 
     def get_targets():
         return self.targets
+
+    def get_
 
     def update(self, time):
         self.map.update(time)
