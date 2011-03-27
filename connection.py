@@ -1,52 +1,48 @@
 import pickle
 import socket, select
 
-class Connection:
+class Connection(object):
 
     delimiter = '\0'
     format = '%d%s%s'
+    ports = range(10236, 10246)
 
-    def __init__(self):
+    def __init__(self, host):
+        """ Save information on how to create the connection. """
+        self.host = host
+
+        self.poll = None
         self.socket = None
-        self.poll = select.poll()
 
-    def host(self, host, port):
-        """ Wait for connections to the given address.  Once this method
-        returns, the connection will be ready for use. """
+    def __enter__(self):
+        """ Make sure that the socket has been created and prepare it for
+        polling.  Polling the socket allows us to avoid the explicit use of
+        threads. """
 
-        address = host, port
-        greeter = socket.socket()
-
-        greeter.bind(address)
-        greeter.listen(5)
-
-        self.socket, ignore = greeter.accept()
-
-        self.finalize()
-
-    def connect(self, host, port):
-        """ Connect to the given address.  If another connection object is not
-        already listening on this address, this will not work. """
-
-        self.socket = socket.socket()
-        self.socket.connect((host, port))
-
-        self.finalize()
-
-    def finalize(self):
-        """ Prepare the socket object for reading.  By taking this extra step,
-        we can avoid the use of threads. """
+        assert self.socket
 
         fileno = self.socket.fileno()
         flags = select.POLLIN
 
+        self.poll = select.poll()
         self.poll.register(fileno, flags)
+
+        return self
+
+    def __exit__(self, *ignore):
+        """ Gracefully close the connection, no matter how the program
+        terminates. """
+
+        self.socket.close()
+
+        self.poll = None
+        self.socket = None
 
     def send(self, message):
         """ Send a message across this connection.  The message is converted
         to a string using the pickle module, so it must be pickle-able. """
 
-        assert self.socket
+        assert self.poll and self.socket
 
         string = pickle.dumps(message)
         size = len(string)
@@ -59,7 +55,7 @@ class Connection:
         messages will be reconstructed from strings using the pickle module,
         so the message classes must be defined for both clients. """
 
-        assert self.socket
+        assert self.poll and self.socket
 
         packet = ""
         messages = []
@@ -100,3 +96,54 @@ class Connection:
                 more_messages = bool(packet)
 
         return messages
+
+class Host(Connection):
+
+    def __enter__(self):
+        """ Listen for clients trying to connect to the given address.  Once
+        this method returns, the connection will be ready for use. """
+
+        for port in self.ports:
+            try:
+                address = self.host, port
+                greeter = socket.socket()
+
+                greeter.bind(address)
+                greeter.listen(5)
+
+                self.socket, ignore = greeter.accept()
+
+                greeter.close()
+
+                return Connection.__enter__(self)
+
+            # If this port can't be bound, it's probably still in use.
+            # Quietly continue to the next port.
+            except socket.error:
+                continue
+
+        # Complain if none of the ports work.
+        raise IOError()
+
+class Client(Connection):
+
+    def __enter__(self):
+        """ Connect to the given address.  If another connection object is not
+        already listening on this address, this will not work. """
+
+        for port in self.ports:
+            try:
+                address = self.host, port
+
+                self.socket = socket.socket()
+                self.socket.connect(address)
+
+                return Connection.__enter__(self)
+
+            # If the client can't connect, the host is probably listening on a
+            # different port.  
+            except socket.error:
+                continue
+
+        # Complain if none of the ports work.
+        raise IOError()

@@ -1,28 +1,37 @@
 #!/usr/bin/env python
 
 import sys
-from connection import *
+from connection import Host, Client
 
 try:
     role = sys.argv[1]
     host = sys.argv[2]
-    port = int(sys.argv[3])
-    
+
+    roles = { "host" : Host(host), "client" : Client(host) }
+    connection = roles[role]
+
 except IndexError:
-    sys.exit("Usage: chat.py <host|client> <host> <port>")
+    sys.exit("Usage: chat.py <host|client> <host>")
 
-connection = Connection()
+except KeyError:
+    sys.exit("Usage: The first argument must be 'host' or 'client'.")
 
-if role == "host":     
-    connection.host(host, port)
-elif role == "client": 
-    connection.connect(host, port)
-else:
-    assert False
 
-while True:
-    message = raw_input(">>> ")
-    connection.send(message)
+try:
+    with connection:
 
-    for response in connection.receive():
-        print response
+        while True:
+            message = raw_input(">>> ")
+            message = message.strip()
+
+            if message:
+                connection.send(message)
+
+            for response in connection.receive():
+                print response
+
+except IOError:
+    sys.exit("Error: Unable to establish a connection.")
+
+except KeyboardInterrupt:
+    print
