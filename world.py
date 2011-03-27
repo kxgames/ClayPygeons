@@ -7,17 +7,17 @@ class World:
 
     def __init__(self):
         self.map = Map(self, settings.map_size)
-        self.sight = Target(self, setting.target_position)
+        self.sight = Sight(self, settings.target_position)
 
         self.targets = []
         
     def get_map(self):
         return self.map
 
-    def get_sight():
+    def get_sight(self):
         return self.sight
 
-    def get_targets():
+    def get_targets(self):
         return self.targets
 
     def update(self, time):
@@ -26,6 +26,9 @@ class World:
 
         for target in self.targets:
             target.update(time)
+
+    def is_playing(self):
+        return True
 
 class Map:
     """ Stores information about the game world.  This is just the size of the
@@ -47,9 +50,9 @@ class Sprite:
     directly instantiated. """
 
     def __init__(self, position, velocity, acceleration):
-        self.position = position
-        self.velocity = velocity
-        self.acceleration = acceleration
+        self.set_position(position)
+        self.set_velocity(velocity)
+        self.set_acceleration(acceleration)
 
     def update(self, time):
         self.velocity += self.acceleration * time
@@ -65,12 +68,15 @@ class Sprite:
         return self.acceleration
 
     def set_position(self, position):
+        assert isinstance(position, Vector)
         self.position = position
 
     def set_velocity(self, velocity):
+        assert isinstance(velocity, Vector)
         self.velocity = velocity
 
     def set_acceleration(self, acceleration):
+        assert isinstance(acceleration, Vector)
         self.acceleration = acceleration
 
 class Sight(Sprite):
@@ -81,11 +87,12 @@ class Sight(Sprite):
         Sprite.__init__(self, position, Vector.null(), Vector.null())
         self.world = world
 
+    """ 
     def update(self, time):
-        Sprite.update(time)
+        Sprite.update(self, time)
 
         position = self.position
-        boundary = self.world.get_map()
+        boundary = self.world.get_map().get_size()
 
         bounce = Vector(1, 1)
         vertical_bounce = Vector(0, -1)
@@ -99,6 +106,7 @@ class Sight(Sprite):
 
         self.velocity = self.velocity * bounce
         self.position = self.velocity * time
+        """
 
 class Target(Sprite):
     """ Represents a target that players can shoot at.  These objects will
