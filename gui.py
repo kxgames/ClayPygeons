@@ -5,9 +5,10 @@ from pygame.locals import *
 
 import shapes
 import vector
+import joystick
 
 class Gui:
-    # def __init__(screen_size, world): {{{1
+    # def __init__ (self, world): {{{1
     def __init__ (self, world):
         self.world = world
         self.map = self.world.get_map()
@@ -21,10 +22,11 @@ class Gui:
             print "No joystick! Aborting...."
             sys.exit(0)
         else:
-            print pygame.joystick.get_count()
+            print 'Number of Joysticks:', pygame.joystick.get_count()
 
-        self.joystick = pygame.joystick.Joystick(0)
-        self.joystick.init()
+        # Make callback dictionary?
+        accelerate_callback = self.world.get_sight().accelerate
+        self.joystick = joystick.Joystick(accelerate_callback)
 
     # def update(self, time): {{{1
     def update (self, time):
@@ -82,34 +84,6 @@ class Gui:
                     sys.exit(0)
             
             if event.type == pygame.JOYAXISMOTION:
-                #print 'JOYAXISMOTION   ', event.axis, event.value
-                # X axis {{{4
-                # Right = 1.0, Left = -1.0
-                sight = self.world.get_sight()
-
-                if 0 == event.axis:
-                    #joystick_y = self.joystick.get_axis(1)
-                    direction = vector.Vector(event.value, 0)
-                    sight.accelerate(direction)
-
-                # Y axis {{{4
-                # Backwards = 1.0, Forwards = -1.0
-                if 1 == event.axis:
-                    #joystick_x = self.joystick.get_axis(0)
-                    direction = vector.Vector(0, event.value)
-                    sight.accelerate(direction)
-
-                # Rotator dial thingy {{{4
-                # Down = 1.0, Up = -1.0
-                if 2 == event.axis:
-                    pass
-                #}}}4
-            #if event.type == pygame.JOYBALLMOTION:
-            #if event.type == pygame.JOYHATMOTION:
-            """ 
-            if event.type == pygame.JOYBUTTONUP:
-                print 'JOYBUTTONUP   ', event.button
-            if event.type == pygame.JOYBUTTONDOWN:
-                print 'JOYBUTTONDOWN   ', event.button
-                """
+                self.joystick.event (event)
+            # }}}3
 
