@@ -7,7 +7,7 @@ import shapes
 import vector
 
 class Gui:
-    # def __init__ (screen_size, world): {{{1
+    # def __init__(screen_size, world): {{{1
     def __init__ (self, world):
         self.world = world
         self.map = self.world.get_map()
@@ -26,11 +26,12 @@ class Gui:
         self.joystick = pygame.joystick.Joystick(0)
         self.joystick.init()
 
-    # def update (self, time): {{{1
+    # def update(self, time): {{{1
     def update (self, time):
-        #self.react(time)
+        self.react(time)
         self.draw(time)
 
+    # def draw(self, time): {{{1
     def draw(self, time):
         background_color = Color("black")
         sight_color = Color("white")
@@ -39,41 +40,38 @@ class Gui:
         screen = self.screen
         screen.fill(background_color)
 
-        # First, draw the sight.
-        if False:
-            sight = self.world.get_sight()
-            position = sight.position.pygame
-
-            size = 10; radius = 0.8 * size
-            color = sight_color; stroke = 2
-
-            pygame.draw.circle(screen, color, position, radius, stroke)
-
-            up = position + size * Vector(0, -1) / 2
-            down = position + size * Vector(0, 1) / 2
-            left = position + size * Vector(-1, 0) / 2
-            right = position + size * Vector(1, 0) / 2
-
-            pygame.draw.line(screen, color, up.pygame, down.pygame, stroke)
-            pygame.draw.line(screen, color, left.pygame, right.pygame, stroke)
-
-        # Second, draw all the targets.
+        # First, draw all the targets in the background.
         for target in self.world.get_targets():
             position = target.position.pygame
             radius = target.radius
             color = target_color
 
             pygame.draw.circle(screen, color, position, radius)
-            #pygame.draw.circle(screen, color, position, target.speed, 1)
 
-            #velocity = target.position + target.velocity
-            #velocity = velocity.pygame
+        # Second, draw the sight in the foreground.
+        sight = self.world.get_sight()
+        position = sight.position.pygame
 
-            #pygame.draw.line(screen, color, position, velocity, 1)
+        # If the size of the sight is made to small, it starts to look
+        # asymmetric.  This probably has to do with the float-to-int
+        # conversion and won't be easy to fix.  So stick with large sights.
+        size = 30; radius = int(0.8 * size)
+        color = sight_color; stroke = 2
+
+        pygame.draw.circle(screen, color, position, radius, stroke)
+
+        up = sight.position + size * vector.Vector(0, -1)
+        down = sight.position + size * vector.Vector(0, 1)
+        left = sight.position + size * vector.Vector(-1, 0)
+        right = sight.position + size * vector.Vector(1, 0)
+
+        pygame.draw.line(screen, color, up.pygame, down.pygame, stroke)
+        pygame.draw.line(screen, color, left.pygame, right.pygame, stroke)
 
         # Finish the update.
         pygame.display.flip()
 
+    # def react(self, time): {{{1
     def react(self, time):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

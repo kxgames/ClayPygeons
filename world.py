@@ -7,7 +7,7 @@ class World:
 
     def __init__(self):
         self.map = Map(self, settings.map_size)
-        self.sight = None
+        self.sight = Sight(self, settings.sight_position)
 
         self.targets = [ Target(self, settings.target_position) ]
         
@@ -22,7 +22,7 @@ class World:
 
     def update(self, time):
         self.map.update(time)
-        #self.sight.update(time)
+        self.sight.update(time)
 
         for target in self.targets:
             target.update(time)
