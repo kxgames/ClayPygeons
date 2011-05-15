@@ -1,6 +1,8 @@
 import settings
 
 from vector import *
+from collisions import *
+from shapes import *
 
 class World:
     """ Creates, stores, and provides access to all of the game objects. """
@@ -49,17 +51,21 @@ class Sprite:
     position data and handles basic physics, but it is not meant to be
     directly instantiated. """
 
-    def __init__(self, position, velocity, acceleration):
-        self.position = position
+    def __init__(self, position, velocity, acceleration, radius=1):
+        self.circle = Circle(position, radius)
         self.velocity = velocity
         self.acceleration = acceleration
 
+
     def update(self, time):
         self.velocity += self.acceleration * time
-        self.position += self.velocity * time
+        position = self.circle.get_center() + self.velocity * time
+
+        # Update circle position. Used for collision purposes.
+        self.circle = Circle(position, self.circle.get_radius())
 
     def get_position(self):
-        return self.position
+        return self.circle.get_center()
 
     def get_velocity(self):
         return self.velocity
@@ -67,12 +73,19 @@ class Sprite:
     def get_acceleration(self):
         return self.acceleration
 
+    def get_radius(self):
+        return self.circle.get_radius()
+
+    def get_circle(self):
+        return self.circle
+
 class Sight(Sprite):
     """ Represents a player's sight.  The motion of these objects is primarily
     controlled by the player, but they will bounce off of walls. """
 
     def __init__(self, world, position):
-        Sprite.__init__(self, position, Vector.null(), Vector.null())
+        Sprite.__init__(self, position, Vector.null(), Vector.null(),
+                settings.sight_radius)
         self.world = world
 
         self.drag = settings.sight_drag
@@ -81,7 +94,7 @@ class Sight(Sprite):
         self.direction = Vector.null()
 
     def update(self, time):
-        position = self.position
+        position = self.circle.get_center()
         boundary = self.world.get_map().get_size()
 
         bounce = False
@@ -100,7 +113,7 @@ class Sight(Sprite):
         # screen.
         if bounce:
             self.velocity = Vector(vx, vy)
-            self.position += self.velocity * time
+            self.circle = Circle.move(self.circle, self.velocity * time)
 
         # Set the acceleration.
         force = self.power * self.direction
@@ -113,6 +126,11 @@ class Sight(Sprite):
 
     def accelerate(self, direction):
         self.direction = direction
+
+    def shoot(self):
+        for target in self.world.targets:
+            if Collisions.circles_touching(self.circle, target.circle):
+                print 'Target hit!', self.circle.get_center()
 
 class Target(Sprite):
     """ Represents a target that players can shoot at.  These objects will
@@ -127,12 +145,12 @@ class Target(Sprite):
         target.  Step is the maximum size of the displacement attempted each
         update cycle. """
 
-        Sprite.__init__(self, position, Vector.null(), Vector.null())
+        Sprite.__init__(self, position, Vector.null(), Vector.null(),
+                settings.target_radius)
         self.world = world
 
         self.power = settings.target_power
         self.speed = settings.target_speed
-        self.radius = settings.target_radius
         self.loopiness = settings.target_loopiness
 
         self.goal = self.speed * Vector.random()
@@ -155,8 +173,3 @@ class Target(Sprite):
 
         # Update the physics as usual.
         Sprite.update(self, time)
-
-        # Add periodic boundary conditions, for debugging purposes.
-        self.position = self.position % 500
-
-
