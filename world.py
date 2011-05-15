@@ -112,10 +112,7 @@ class Sight(Sprite):
         Sprite.update(self, time)
 
     def accelerate(self, direction):
-        try:
-            self.direction = direction.normal
-        except NullVectorError:
-            self.direction = Vector.null()
+        self.direction = direction
 
 class Target(Sprite):
     """ Represents a target that players can shoot at.  These objects will
