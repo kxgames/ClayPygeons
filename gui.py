@@ -6,7 +6,6 @@ from pygame.locals import *
 import shapes
 import vector
 
-
 class Gui:
     # def __init__ (screen_size, world): {{{1
     def __init__ (self, world):
@@ -29,10 +28,54 @@ class Gui:
 
     # def update (self, time): {{{1
     def update (self, time):
-        self.screen.fill ((0,0,0))
-        # Get user input {{{2
+        #self.react(time)
+        self.draw(time)
+
+    def draw(self, time):
+        background_color = Color("black")
+        sight_color = Color("white")
+        target_color = Color("red")
+
+        screen = self.screen
+        screen.fill(background_color)
+
+        # First, draw the sight.
+        if False:
+            sight = self.world.get_sight()
+            position = sight.position.pygame
+
+            size = 10; radius = 0.8 * size
+            color = sight_color; stroke = 2
+
+            pygame.draw.circle(screen, color, position, radius, stroke)
+
+            up = position + size * Vector(0, -1) / 2
+            down = position + size * Vector(0, 1) / 2
+            left = position + size * Vector(-1, 0) / 2
+            right = position + size * Vector(1, 0) / 2
+
+            pygame.draw.line(screen, color, up.pygame, down.pygame, stroke)
+            pygame.draw.line(screen, color, left.pygame, right.pygame, stroke)
+
+        # Second, draw all the targets.
+        for target in self.world.get_targets():
+            position = target.position.pygame
+            radius = target.radius
+            color = target_color
+
+            pygame.draw.circle(screen, color, position, radius)
+            #pygame.draw.circle(screen, color, position, target.speed, 1)
+
+            #velocity = target.position + target.velocity
+            #velocity = velocity.pygame
+
+            #pygame.draw.line(screen, color, position, velocity, 1)
+
+        # Finish the update.
+        pygame.display.flip()
+
+    def react(self, time):
         for event in pygame.event.get():
-            # Quit {{{3
             if event.type == pygame.QUIT:
                 sys.exit(0)
             
@@ -40,7 +83,6 @@ class Gui:
                 if event.key == pygame.K_ESCAPE:
                     sys.exit(0)
             
-            # Joystick input {{{3
             if event.type == pygame.JOYAXISMOTION:
                 #print 'JOYAXISMOTION   ', event.axis, event.value
                 # X axis {{{4
@@ -73,14 +115,3 @@ class Gui:
                 print 'JOYBUTTONDOWN   ', event.button
                 """
 
-        sight = self.world.get_sight()
-        #print sight.get_position().x
-        #print sight.get_position().y
-        sight_position = sight.get_position().get_pygame()
-        pygame.draw.circle(self.screen, (255, 255, 255), sight_position, 10)
-
-        pygame.display.flip()
-        pygame.time.wait(50)
-
-# self.world.get_sight().get_position()
-# self.world.get_sight().set_position()

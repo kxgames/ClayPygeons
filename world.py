@@ -7,9 +7,9 @@ class World:
 
     def __init__(self):
         self.map = Map(self, settings.map_size)
-        self.sight = Sight(self, settings.target_position)
+        self.sight = None
 
-        self.targets = []
+        self.targets = [ Target(self, settings.target_position) ]
         
     def get_map(self):
         return self.map
@@ -22,7 +22,7 @@ class World:
 
     def update(self, time):
         self.map.update(time)
-        self.sight.update(time)
+        #self.sight.update(time)
 
         for target in self.targets:
             target.update(time)
@@ -68,15 +68,15 @@ class Sprite:
         return self.acceleration
 
 class Sight(Sprite):
-    """ Represents a player's sight.  The motion of these objects is promarily
+    """ Represents a player's sight.  The motion of these objects is primarily
     controlled by the player, but they will bounce off of walls. """
 
     def __init__(self, world, position):
         Sprite.__init__(self, position, Vector.null(), Vector.null())
         self.world = world
 
-        self.drag = settings.target_drag
-        self.power = settings.target_power
+        self.drag = settings.sight_drag
+        self.power = settings.sight_power
 
         self.direction = Vector.null()
 
@@ -121,6 +121,45 @@ class Target(Sprite):
     """ Represents a target that players can shoot at.  These objects will
     move autonomously in the final version. """
 
-    def __init__(self, world):
-        Sprite.__init__(self, Vector.null(), Vector.null(), Vector.null())
+    def __init__(self, world, position):
+        """ These variable names are a little bit obfuscated right now.  I
+        plan to change them once I get a better understanding of how they
+        affect the movement of the target.  
+        
+        Until then, range is the size of the imaginary circle drawn around the
+        target.  Step is the maximum size of the displacement attempted each
+        update cycle. """
+
+        Sprite.__init__(self, position, Vector.null(), Vector.null())
         self.world = world
+
+        self.power = settings.target_power
+        self.speed = settings.target_speed
+        self.radius = settings.target_radius
+        self.loopiness = settings.target_loopiness
+
+        self.goal = self.speed * Vector.random()
+
+    def update(self, time):
+        offset = self.loopiness * Vector.random()
+
+        self.goal = self.goal + offset
+        self.goal = self.speed * self.goal.normal
+
+        # The goal is what the velocity should ideally be.  The acceleration
+        # can be computed by finding the difference between the current
+        # velocity and the goal.
+        self.acceleration = self.goal - self.velocity
+
+        # If the acceleration is too fast, then truncate it.  I don't really
+        # think this will ever occur.
+        if self.acceleration.magnitude > self.power:
+            self.acceleration = self.power * self.acceleration.normal
+
+        # Update the physics as usual.
+        Sprite.update(self, time)
+
+        # Add periodic boundary conditions, for debugging purposes.
+        self.position = self.position % 500
+
+

@@ -16,8 +16,12 @@ clock = pygame.time.Clock()
 world = World()
 gui = Gui(world)
 
-while world.is_playing():
-    time = clock.tick(40) / 1000
+try:
+    while world.is_playing():
+        time = clock.tick(40) / 1000
 
-    gui.update(time)
-    world.update(time)
+        gui.update(time)
+        world.update(time)
+
+except KeyboardInterrupt:
+    print
