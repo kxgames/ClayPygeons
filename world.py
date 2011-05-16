@@ -5,12 +5,21 @@ from vector import *
 class World:
     """ Creates, stores, and provides access to all of the game objects. """
 
-    def __init__(self):
+    def setup(self):
         self.map = Map(self, settings.map_size)
         self.sight = Sight(self, settings.sight_position)
-
         self.targets = [ Target(self, settings.target_position) ]
+
+    def teardown(self):
+        pass
         
+    def update(self, time):
+        self.map.update(time)
+        self.sight.update(time)
+
+        for target in self.targets:
+            target.update(time)
+
     def get_map(self):
         return self.map
 
@@ -20,12 +29,11 @@ class World:
     def get_targets(self):
         return self.targets
 
-    def update(self, time):
-        self.map.update(time)
-        self.sight.update(time)
+    def add_target(self, target):
+        self.targets.append(target)
 
-        for target in self.targets:
-            target.update(time)
+    def remove_target(self, target):
+        self.targets.remove(target)
 
     def is_playing(self):
         return True
@@ -55,8 +63,12 @@ class Sprite:
         self.acceleration = acceleration
 
     def update(self, time):
-        self.velocity += self.acceleration * time
+        # This is the "Velocity Verlet Algorithm".  I learned it in my
+        # computational chemistry class, and it's a better way to integrate
+        # Newton's equations of motions than what we were doing before.
+        self.velocity += self.acceleration * (time / 2)
         self.position += self.velocity * time
+        self.velocity += self.acceleration * (time / 2)
 
     def get_position(self):
         return self.position
@@ -156,7 +168,11 @@ class Target(Sprite):
         # Update the physics as usual.
         Sprite.update(self, time)
 
-        # Add periodic boundary conditions, for debugging purposes.
-        self.position = self.position % 500
+    def reposition(self, map):
+        x, y = self.position
 
+        x = x % map.size.width
+        y = y % map.size.height
+
+        self.position = Vector(x, y)
 
