@@ -5,7 +5,7 @@ import vector
 
 
 class Joystick:
-    def __init__ (self, directional_callback):
+    def __init__ (self, callbacks):
         pygame.joystick.init()
         
         # Get joystick set up. This code only uses one joystick in the moment.
@@ -15,10 +15,11 @@ class Joystick:
         self.x = self.joystick.get_axis(0)
         self.y = self.joystick.get_axis(1)
 
-        self.directional_callback = directional_callback
+        self.callbacks = callbacks
 
-    def event (self, event):
-        # Directional Axis. X, Y {{{4
+    # def axis_event (self, event): {{{1
+    def axis_event (self, event):
+        # Directional Axis. X, Y {{{2
         # X axis:  Right = 1.0, Left = -1.0
         # Y axis:  Backwards = 1.0, Forwards = -1.0
         if event.axis in (0,1):
@@ -26,26 +27,24 @@ class Joystick:
             if 1 == event.axis: self.y = event.value
 
             direction = vector.Vector (self.x, self.y)
-            self.directional_callback (direction)
+            self.callbacks['direction'] (direction)
 
-
-        # Rotator dial thingy {{{4
+        # Rotator dial thingy {{{2
         # Down = 1.0, Up = -1.0
         if 2 == event.axis:
             pass
+        #}}}2
 
 
-        # Buttons {{{4
-        """ 
-        if event.type == pygame.JOYBUTTONUP:
-            print 'JOYBUTTONUP   ', event.button
-        if event.type == pygame.JOYBUTTONDOWN:
-            print 'JOYBUTTONDOWN   ', event.button
-        """
+    # def button_event (self, event):{{{1
+    def button_event (self, event, down):
+        # down is True when event is button down. False if event is button up.
+        if down:
+            if event.button == 0:
+                self.callbacks['shoot'] ()
 
+    # Our joysticks don't have these: {{{1
+    #if event.type == pygame.JOYBALLMOTION:
+    #if event.type == pygame.JOYHATMOTION:
 
-        # Our joysticks don't have these: {{{4
-        #if event.type == pygame.JOYBALLMOTION:
-        #if event.type == pygame.JOYHATMOTION:
-
-        #}}}4
+    #}}}1

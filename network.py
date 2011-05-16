@@ -29,6 +29,7 @@ class Network:
         connection = self.connection
 
         map = world.get_map()
+        boundary = map.get_size()
         targets = world.get_targets()
 
         # Find all the targets in this game that have left the field of play,
@@ -36,13 +37,13 @@ class Network:
         for target in targets:
             point = target.get_position()
 
-            if not Collisions.point_inside_shape(point, map.size):
+            if not Collisions.point_inside_shape(point, boundary):
                 world.remove_target(target)
                 connection.send(target)
 
         # Add any targets that left the other game into this one.
         for target in connection.receive():
-            target.reposition(map)
+            target.wrap_around(boundary)
             world.add_target(target)
 
     def teardown(self):
