@@ -26,8 +26,13 @@ class World:
         self.map.update(time)
         self.sight.update(time)
 
+        alive = []
         for target in self.targets:
             target.update(time)
+            if target.hitpoints > 0:
+                alive.append(target)
+        self.targets = alive
+
 
     def is_playing(self):
         return True
@@ -130,7 +135,7 @@ class Sight(Sprite):
     def shoot(self):
         for target in self.world.targets:
             if Collisions.circles_touching(self.circle, target.circle):
-                print 'Target hit!', self.circle.get_center()
+                target.hit()
 
 class Target(Sprite):
     """ Represents a target that players can shoot at.  These objects will
@@ -152,6 +157,7 @@ class Target(Sprite):
         self.power = settings.target_power
         self.speed = settings.target_speed
         self.loopiness = settings.target_loopiness
+        self.hitpoints = settings.target_hitpoints
 
         self.goal = self.speed * Vector.random()
 
@@ -173,3 +179,10 @@ class Target(Sprite):
 
         # Update the physics as usual.
         Sprite.update(self, time)
+
+    def hit(self):
+        self.hitpoints -= settings.shot_power
+        print 'Target hit!', self.hitpoints
+
+    def get_hitpoints(self):
+        return self.hitpoints

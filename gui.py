@@ -56,6 +56,21 @@ class Gui:
 
             pygame.draw.circle(screen, color, position, radius)
 
+            # Draw a hitpoint bar
+            hp = target.get_hitpoints()
+            hp_max = settings.target_hitpoints
+            hp_ratio = float(hp)/hp_max
+
+            bar_width = hp_ratio * 2 * radius
+            bar_height = settings.hitpoints_bar_height
+
+            delta = Vector(-radius, -(radius + 2 * bar_height))
+            bar_position = (target.get_position() + delta).pygame
+
+            hp_bar = Rect(bar_position, (bar_width, bar_height))
+
+            pygame.draw.rect(screen, (255,0,0), hp_bar)
+
         # Second, draw the sight in the foreground.
         sight = self.world.get_sight()
         position = sight.get_position().pygame
