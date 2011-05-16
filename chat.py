@@ -16,7 +16,6 @@ except IndexError:
 except KeyError:
     sys.exit("Usage: The first argument must be 'host' or 'client'.")
 
-
 try:
     with connection:
 
