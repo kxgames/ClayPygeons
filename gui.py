@@ -10,9 +10,12 @@ import settings
 import joystick
 
 class Gui:
-    # def __init__ (self, world): {{{1
+    # def __init__(self, world): {{{1
     def __init__ (self, world):
         self.world = world
+
+    # def setup(self): {{{1
+    def setup(self):
         self.map = self.world.get_map()
 
         pygame.init()
@@ -34,8 +37,12 @@ class Gui:
 
         self.joystick = joystick.Joystick(joystick_callbacks)
 
+    # def teardown(self): {{{1
+    def teardown(self):
+        pass
+
     # def update(self, time): {{{1
-    def update (self, time):
+    def update(self, time):
         self.react(time)
         self.draw(time)
 
@@ -71,11 +78,11 @@ class Gui:
 
             pygame.draw.rect(screen, (255,0,0), hp_bar)
 
-        # Second, draw the sight in the foreground.
+        # After that, draw the sight in the foreground.
         sight = self.world.get_sight()
         position = sight.get_position().pygame
 
-        # If the size of the sight is made to small, it starts to look
+        # If the size of the sight is made too small, it starts to look
         # asymmetric.  This probably has to do with the float-to-int
         # conversion and won't be easy to fix.  So stick with large sights.
         radius = settings.sight_radius; size = int(1.25 * radius)

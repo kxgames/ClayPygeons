@@ -19,7 +19,7 @@ shot_power = 20
         #"firing" : pygame.image.load('images/sight-firing.png') }
 
 target_power = 200
-target_speed = 30
+target_speed = 100
 target_radius = 10
 target_loopiness = 50
 target_hitpoints = 100

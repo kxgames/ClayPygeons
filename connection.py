@@ -38,6 +38,10 @@ class Connection(object):
         self.poll = None
         self.socket = None
 
+    # Define a pair of convenience functions.
+    def enter(self): return self.__enter__()
+    def exit(self, *ignore): return self.__exit__()
+
     def send(self, message):
         """ Send a message across this connection.  The message is converted
         to a string using the pickle module, so it must be pickle-able. """
@@ -147,3 +151,24 @@ class Client(Connection):
 
         # Complain if none of the ports work.
         raise IOError()
+
+class Sandbox(Connection):
+    """ Create an empty class that satisfies the connection interface.  This
+    class can be used to play the game without going over the internet. """
+
+    def __init__(self, host):
+        self.messages = []
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, *ignore):
+        pass
+
+    def send(self, message):
+        self.messages.append(message)
+
+    def receive(self):
+        messages = self.messages
+        self.messages = []
+        return messages

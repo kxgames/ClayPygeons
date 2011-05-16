@@ -7,21 +7,14 @@ from shapes import *
 class World:
     """ Creates, stores, and provides access to all of the game objects. """
 
-    def __init__(self):
+    def setup(self):
         self.map = Map(self, settings.map_size)
         self.sight = Sight(self, settings.sight_position)
-
         self.targets = [ Target(self, settings.target_position) ]
+
+    def teardown(self):
+        pass
         
-    def get_map(self):
-        return self.map
-
-    def get_sight(self):
-        return self.sight
-
-    def get_targets(self):
-        return self.targets
-
     def update(self, time):
         self.map.update(time)
         self.sight.update(time)
@@ -33,6 +26,20 @@ class World:
                 alive.append(target)
         self.targets = alive
 
+    def get_map(self):
+        return self.map
+
+    def get_sight(self):
+        return self.sight
+
+    def get_targets(self):
+        return self.targets
+
+    def add_target(self, target):
+        self.targets.append(target)
+
+    def remove_target(self, target):
+        self.targets.remove(target)
 
     def is_playing(self):
         return True
@@ -56,61 +63,31 @@ class Sprite:
     position data and handles basic physics, but it is not meant to be
     directly instantiated. """
 
-    def __init__(self, position, velocity, acceleration, radius=1):
+    def __init__(self, position, radius):
         self.circle = Circle(position, radius)
-        self.velocity = velocity
-        self.acceleration = acceleration
-
-
-    def update(self, time):
-        self.velocity += self.acceleration * time
-        position = self.circle.get_center() + self.velocity * time
-
-        # Update circle position. Used for collision purposes.
-        self.circle = Circle(position, self.circle.get_radius())
-
-    def get_position(self):
-        return self.circle.get_center()
-
-    def get_velocity(self):
-        return self.velocity
-
-    def get_acceleration(self):
-        return self.acceleration
-
-    def get_radius(self):
-        return self.circle.get_radius()
-
-    def get_circle(self):
-        return self.circle
-
-class Sight(Sprite):
-    """ Represents a player's sight.  The motion of these objects is primarily
-    controlled by the player, but they will bounce off of walls. """
-
-    def __init__(self, world, position):
-        Sprite.__init__(self, position, Vector.null(), Vector.null(),
-                settings.sight_radius)
-        self.world = world
-
-        self.drag = settings.sight_drag
-        self.power = settings.sight_power
-
-        self.direction = Vector.null()
+        self.velocity = Vector.null()
+        self.acceleration = Vector.null()
 
     def update(self, time):
-        position = self.circle.get_center()
-        boundary = self.world.get_map().get_size()
+        # This is the "Velocity Verlet Algorithm".  I learned it in my
+        # computational chemistry class, and it's a better way to integrate
+        # Newton's equations of motions than what we were doing before.
+        self.velocity += self.acceleration * (time / 2)
+        self.circle = Circle.move(self.circle, self.velocity * time)
+        self.velocity += self.acceleration * (time / 2)
 
-        bounce = False
+    def bounce(self, time, boundary):
+        x, y = self.circle.center
         vx, vy = self.velocity
 
+        bounce = False
+
         # Check for collisions against the walls.
-        if position.y < boundary.top or position.y > boundary.bottom:
+        if y < boundary.top or y > boundary.bottom:
             bounce = True
             vy = -vy
 
-        if position.x < boundary.left or position.x > boundary.right:
+        if x < boundary.left or x > boundary.right:
             bounce = True
             vx = -vx
 
@@ -120,14 +97,54 @@ class Sight(Sprite):
             self.velocity = Vector(vx, vy)
             self.circle = Circle.move(self.circle, self.velocity * time)
 
+    def wrap_around(self, boundary):
+        x, y = self.circle.center
+
+        x = x % boundary.width
+        y = y % boundary.height
+
+        position = Vector(x, y)
+        self.circle = Circle(position, self.circle.radius)
+
+    def get_position(self):
+        return self.circle.center
+
+    def get_velocity(self):
+        return self.velocity
+
+    def get_acceleration(self):
+        return self.acceleration
+
+    def get_radius(self):
+        return self.circle.radius
+
+    def get_circle(self):
+        return self.circle
+
+class Sight(Sprite):
+    """ Represents a player's sight.  The motion of these objects is primarily
+    controlled by the player, but they will bounce off of walls. """
+
+    def __init__(self, world, position):
+        Sprite.__init__(self, position, settings.sight_radius)
+        self.world = world
+
+        self.drag = settings.sight_drag
+        self.power = settings.sight_power
+
+        self.direction = Vector.null()
+
+    def update(self, time):
         # Set the acceleration.
         force = self.power * self.direction
         drag = -self.drag * self.velocity
 
         self.acceleration = force + drag
-
-        # Update the physics as usual.
         Sprite.update(self, time)
+
+        # Bounce the sight off the walls.
+        boundary = self.world.get_map().get_size()
+        Sprite.bounce(self, time, boundary)
 
     def accelerate(self, direction):
         self.direction = direction
@@ -142,16 +159,7 @@ class Target(Sprite):
     move autonomously in the final version. """
 
     def __init__(self, world, position):
-        """ These variable names are a little bit obfuscated right now.  I
-        plan to change them once I get a better understanding of how they
-        affect the movement of the target.  
-        
-        Until then, range is the size of the imaginary circle drawn around the
-        target.  Step is the maximum size of the displacement attempted each
-        update cycle. """
-
-        Sprite.__init__(self, position, Vector.null(), Vector.null(),
-                settings.target_radius)
+        Sprite.__init__(self, position, settings.target_radius)
         self.world = world
 
         self.power = settings.target_power
@@ -172,8 +180,7 @@ class Target(Sprite):
         # velocity and the goal.
         self.acceleration = self.goal - self.velocity
 
-        # If the acceleration is too fast, then truncate it.  I don't really
-        # think this will ever occur.
+        # If the acceleration is too fast, then truncate it.
         if self.acceleration.magnitude > self.power:
             self.acceleration = self.power * self.acceleration.normal
 
