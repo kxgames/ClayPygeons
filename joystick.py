@@ -2,7 +2,7 @@ import pygame
 from pygame.locals import *
 
 import vector
-
+import output
 
 class Joystick:
     def __init__ (self, callbacks):
@@ -12,8 +12,9 @@ class Joystick:
         self.joystick = pygame.joystick.Joystick(0)
         self.joystick.init()
 
-        self.x = self.joystick.get_axis(0)
-        self.y = self.joystick.get_axis(1)
+        with output.NoPrint():
+            self.x = self.joystick.get_axis(0)
+            self.y = self.joystick.get_axis(1)
 
         self.callbacks = callbacks
 
