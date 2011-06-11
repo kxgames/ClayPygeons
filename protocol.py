@@ -48,7 +48,7 @@ class Hub:
         self.greeter.setup()
         self.handler = self.connecting
 
-        world = self.systems["world"]
+        self.world = self.systems["world"]
 
         while not world.ready_to_play():
             self.greet(); self.update()
@@ -65,10 +65,8 @@ class Hub:
             raise Hub.UnrecognizedMessage(message)
 
     def playing(self, id, message):
-        world = self.systems["world"]
-
         if isinstance(message, game.TargetLeft):
-            world.target_left(id, message.target)
+            self.world.target_left(id, message.target)
 
         elif isinstance(message, game.TargetDestroyed):
             self.world.target_destroyed(id, message.target)

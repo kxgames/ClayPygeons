@@ -5,48 +5,9 @@ from vector import *
 from collisions import *
 from shapes import *
 
-class World:
-    """ Creates, stores, and provides access to all of the game objects. """
-
-    def setup(self):
-        pass
-
-    def teardown(self):
-        pass
-        
-    def update(self, time):
-        self.map.update(time)
-        self.sight.update(time)
-
-        alive = []
-        for target in self.targets:
-            target.update(time)
-            if target.hitpoints > 0:
-                alive.append(target)
-        self.targets = alive
-
-    def get_map(self):
-        return self.map
-
-    def get_sight(self):
-        return self.sight
-
-    def get_targets(self):
-        return self.targets
-
-    def add_target(self, target):
-        self.targets.append(target)
-
-    def remove_target(self, target):
-        self.targets.remove(target)
-
-    def is_playing(self):
-        return True
-
 class Lead:
 
     def __init__(self, host, port, map, sight, targets, parameters):
-        # Contains references to the core game systems.
         self.greeter = network.Host(host, port)
         self.connections = []
 
