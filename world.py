@@ -1,3 +1,4 @@
+import random
 import settings
 
 from vector import *
@@ -8,9 +9,7 @@ class World:
     """ Creates, stores, and provides access to all of the game objects. """
 
     def setup(self):
-        self.map = Map(self, settings.map_size)
-        self.sight = Sight(self, settings.sight_position)
-        self.targets = [ Target(self, settings.target_position) ]
+        pass
 
     def teardown(self):
         pass
@@ -43,6 +42,92 @@ class World:
 
     def is_playing(self):
         return True
+
+class Lead:
+
+    def __init__(self, systems, map, sight, targets, parameters):
+        # Contains references to the core game systems.
+        self.systems = systems
+
+        self.map = map
+        self.sight = sight
+        self.targets = targets
+        self.parameters = parameters
+
+        self.players = {}
+
+    def __str__(self):
+        return "Clay Pygeons"
+
+    def setup(self):
+        self.hub = self.systems["hub"]
+
+    def login(self, id, name):
+        if not self.ready_to_play():
+            self.players[id] = Player(name, self.sight)
+        else:
+            raise AssertionError()
+
+        if self.ready_to_play():
+            self.hub.start_playing()
+
+    def update(self, time):
+        pass
+
+    def ready_to_play(self):
+        return len(self.players) == self.parameters["number of players"]
+
+    def still_playing(self):
+        return True
+
+    def target_left(self, origin, target):
+        destination = origin
+        players = self.players.keys()
+
+        while destination == origin:
+            destination = random.choice(players)
+
+        self.hub.target_came(destination, target)
+
+    def target_destroyed(self, id, target):
+        player = self.players[id]
+        points = target.get_points()
+
+        # Check to see if the game is over.
+        
+        player.score(points)
+        self.hub.player_scored(id, points)
+
+class Follow(World):
+
+    def __init__(self, systems):
+        self.systems = systems
+
+    def update(self, time):
+        pass
+
+    def setup(self):
+        self.courier = self.systems["courier"]
+
+    def player_scored(self, id, points):
+        pass
+
+    def target_came(self, id, points):
+        pass
+
+    def game_over(self, id, points):
+        pass
+
+class Player:
+
+    def __init__(self, name, sight):
+        self.name = name
+        self.sight = sight
+
+        self.points = 0
+
+    def score(self, points):
+        self.points += points
 
 class Map:
     """ Stores information about the game world.  This is just the size of the

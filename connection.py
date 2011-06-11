@@ -156,7 +156,7 @@ class Sandbox(Connection):
     """ Create an empty class that satisfies the connection interface.  This
     class can be used to play the game without going over the internet. """
 
-    def __init__(self, host):
+    def __init__(self, *ignore):
         self.messages = []
 
     def __enter__(self):
