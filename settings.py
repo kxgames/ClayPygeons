@@ -7,7 +7,7 @@ host = arguments.option("host", default='localhost')
 port = arguments.option("port", default=0, cast=int) + 11249
 
 size = Rectangle.from_size(500, 500)
-map = Map(size=size, players=1, points=50, friction=50)
+map = Map(size=size, players=2, points=50, friction=50)
 
 sights = [
         Sight("Rifle", mass=20, force=100, size=2, power=10, points=1),

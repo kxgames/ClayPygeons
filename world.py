@@ -50,26 +50,42 @@ class Universe:
         pass
 
     # Messaging {{{1
-    def target_left(self, address, target):
+    def target_left(self, sender, address, message):
+        print "Receiving: TargetLeft"
         destination = address
         players = self.players.keys()
 
-        while destination == address:
+        # Make sure the message isn't sent to the courier running on a server,
+        # which will always have the first address.  This is a serious hack,
+        # but the alternative is writing a full lobby.
+        #
+        # Actually, this doesn't work at all.  The post office doesn't know
+        # the sender's address, so there's no way to avoid potentially sending
+        # the message right back to the sender.
+        while destination in (address, 1):
             destination = random.choice(players)
 
-        self.target_came(destination, target)
+        self.target_came(destination, message.target)
 
     def target_came(self, destination, target):
+        print "Sending: TargetCame"
+        print "   destination =", destination
         message = game.TargetCame(target)
         self.courier.deliver(message, destination)
 
-    def target_destroyed(self, address, target):
-        self.player_scored(address, target)
+    def target_destroyed(self, sender, address, message):
+        print "Receiving: TargetDestroyed"
+        self.player_scored(sender, message.target)
 
         # If we decide to implement Quidditch-style rules, this is where we
         # would check to see if the snitch had been destroyed.
+        if False:
+            print "Sending: GameOver"
+            message = GameOver(self)
+            self.courier.deliver(message)
 
     def player_scored(self, address, points):
+        print "Sending: PlayerScored"
         player = self.players[address]
         player.score(points)
 
@@ -160,9 +176,13 @@ class World:
         self.courier.deliver(message)
         self.targets.remove(target)
 
-    def target_came(self, address, target):
+    def target_came(self, sender, address, message):
         print "Receiving: TargetCame"
-        self.targets.append(target)
+        print "    message =", message
+        print "    target =", message.target
+        position = self.map.place_target()
+        message.target.set_position(position)
+        self.targets.append(message.target)
 
     def target_destroyed(self, target, sight):
         print "Sending: TargetDestroyed"
@@ -170,12 +190,12 @@ class World:
         self.courier.deliver(message)
         self.targets.remove(target)
 
-    def player_scored(self, address, points):
+    def player_scored(self, sender, address, message):
         print "Receiving: PlayerScored"
         player = self.players[address]
-        player.score(points)
+        player.score(message.points)
 
-    def game_over(self, address, points):
+    def game_over(self, sender, address, message):
         print "Receiving: GameOver"
         self.finished = True
     # }}} 1

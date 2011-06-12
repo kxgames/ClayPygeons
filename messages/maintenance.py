@@ -7,6 +7,7 @@ class Cancellation:
         self.type = type
 
 class Delivery:
-    def __init__(self, message, address):
-        self.address = address
+    def __init__(self, message, address, sender):
         self.message = message
+        self.address = address
+        self.sender = sender
