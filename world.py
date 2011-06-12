@@ -50,20 +50,18 @@ class Universe:
         pass
 
     # Messaging {{{1
-    def target_left(self, origin, target):
-        destination = origin
+    def target_left(self, address, target):
+        destination = address
         players = self.players.keys()
 
-        while destination == origin:
+        while destination == address:
             destination = random.choice(players)
 
         self.target_came(destination, target)
 
     def target_came(self, destination, target):
-        connection = self.follows[destination]
         message = game.TargetCame(target)
-
-        connection.send(message)
+        self.courier.deliver(message, destination)
 
     def target_destroyed(self, address, target):
         self.player_scored(address, target)
@@ -73,13 +71,11 @@ class Universe:
 
     def player_scored(self, address, points):
         player = self.players[address]
-        points = target.get_points()
-
         player.score(points)
 
         message = game.PlayerScored(address, points)
-        for connection in self.connections.values():
-            connection.send(message)
+        self.courier.deliver(message)
+
     # }}}1
 
 class World:
@@ -164,7 +160,7 @@ class World:
         self.courier.deliver(message)
         self.targets.remove(target)
 
-    def target_came(self, target):
+    def target_came(self, address, target):
         print "Receiving: TargetCame"
         self.targets.append(target)
 
