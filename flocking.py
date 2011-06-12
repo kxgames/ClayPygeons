@@ -25,6 +25,7 @@ class Sprite:
 
     # Updates {{{1
     def update(self, time):
+        acceleration = self.acceleration
         # Calculate change to acceleration. Accounts for the weight and
         # prioritization of each behavior. For these purposes, force and
         # acceleration are basically the same in name.
@@ -34,10 +35,10 @@ class Sprite:
             force = ideal_force * weight
             if force.magnitude <= remaining_force:
                 remaining_force -= force.magnitude
-                self.acceleration += force
+                acceleration += force
             elif remaining_force > 0:
                 final_force = force.normal * remaining_force
-                self.acceleration += final_force
+                acceleration += final_force
                 break
             else:
                 break
@@ -45,9 +46,10 @@ class Sprite:
         # This is the "Velocity Verlet Algorithm".  I learned it in my
         # computational chemistry class, and it's a better way to integrate
         # Newton's equations of motions than what we were doing before.
-        self.velocity += self.acceleration * (time / 2)
+        self.velocity += acceleration * (time / 2)
         self.circle = Circle.move(self.circle, self.velocity * time)
-        self.velocity += self.acceleration * (time / 2)
+        self.velocity += acceleration * (time / 2)
+
 
     def bounce(self, time, boundary):
         x, y = self.circle.center
@@ -147,4 +149,3 @@ class Flee:
         # acceleration is basically the same as force. 
         return force, self.weight
     # }}}1
-
