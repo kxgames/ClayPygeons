@@ -4,6 +4,7 @@ import settings
 from vector import *
 from collisions import *
 from shapes import *
+from flocking import *
 
 class Player:
 
@@ -29,69 +30,6 @@ class Map:
 
     def get_size(self):
         return self.size
-
-class Sprite:
-    """ A parent class for every game object that can move.  This class stores
-    position data and handles basic physics, but it is not meant to be
-    directly instantiated. """
-
-    def __init__(self, position, radius):
-        self.circle = Circle(position, radius)
-        self.velocity = Vector.null()
-        self.acceleration = Vector.null()
-
-    def update(self, time):
-        # This is the "Velocity Verlet Algorithm".  I learned it in my
-        # computational chemistry class, and it's a better way to integrate
-        # Newton's equations of motions than what we were doing before.
-        self.velocity += self.acceleration * (time / 2)
-        self.circle = Circle.move(self.circle, self.velocity * time)
-        self.velocity += self.acceleration * (time / 2)
-
-    def bounce(self, time, boundary):
-        x, y = self.circle.center
-        vx, vy = self.velocity
-
-        bounce = False
-
-        # Check for collisions against the walls.
-        if y < boundary.top or y > boundary.bottom:
-            bounce = True
-            vy = -vy
-
-        if x < boundary.left or x > boundary.right:
-            bounce = True
-            vx = -vx
-
-        # If there is a bounce, flip the velocity and move back onto the
-        # screen.
-        if bounce:
-            self.velocity = Vector(vx, vy)
-            self.circle = Circle.move(self.circle, self.velocity * time)
-
-    def wrap_around(self, boundary):
-        x, y = self.circle.center
-
-        x = x % boundary.width
-        y = y % boundary.height
-
-        position = Vector(x, y)
-        self.circle = Circle(position, self.circle.radius)
-
-    def get_position(self):
-        return self.circle.center
-
-    def get_velocity(self):
-        return self.velocity
-
-    def get_acceleration(self):
-        return self.acceleration
-
-    def get_radius(self):
-        return self.circle.radius
-
-    def get_circle(self):
-        return self.circle
 
 class Sight(Sprite):
     """ Represents a player's sight.  The motion of these objects is primarily
@@ -165,3 +103,6 @@ class Target(Sprite):
 
     def get_hitpoints(self):
         return self.hitpoints
+    
+    def get_speed(self):
+        return self.speed
