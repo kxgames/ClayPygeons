@@ -68,7 +68,7 @@ class Sprite:
     def setup(self, position, radius):
         self.circle = Circle(position, radius)
 
-    def update(self, time):
+    def update(self, time, disp=False):
         # This is the "Velocity Verlet Algorithm".  I learned it in my
         # computational chemistry class, and it's a better way to integrate
         # Newton's equations of motions than what we were doing before.
@@ -157,14 +157,13 @@ class Sight(Sprite):
         friction = Vector.null()
 
         self.acceleration = force + friction
-        Sprite.update(self, time)
+        Sprite.update(self, time, disp=True)
 
         # Bounce the sight off the walls.
         boundary = self.world.get_map().get_size()
         Sprite.bounce(self, time, boundary)
 
     def accelerate(self, direction):
-        print "Accelerating the sight."
         self.direction = direction
 
     def shoot(self):

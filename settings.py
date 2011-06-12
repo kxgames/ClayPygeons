@@ -13,10 +13,10 @@ sights = [
         Sight("Rifle", mass=20, force=100, size=2, power=10, points=1),
         Sight("Shotgun", mass=50, force=100, size=10, power=4, points=1) ]
 
-snitch = Snitch(size=2, speed=12, health=50, points=50)
+snitch = Snitch(size=5, speed=12, health=50, points=50)
 quaffles = [
-        Quaffle(chance=10, size=5, speed=10, health=30, points=6),
-        Quaffle(chance=15, size=3, speed=7, health=20, points=5) ]
+        Quaffle(chance=10, size=25, speed=10, health=30, points=6),
+        Quaffle(chance=15, size=15, speed=7, health=20, points=5) ]
 
 # In the future, we will want to add more types of quaffles.  For example:
 # AntiQuaffle(chance=5, size=3, speed=10, health=5, points=-10)

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import division
+
 from gui import Gui
 from world import World
 from postoffice import Courier
