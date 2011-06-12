@@ -71,7 +71,6 @@ class Universe:
         connection.send(message)
 
     def target_destroyed(self, address, target):
-
         self.player_scored(address, target)
 
         # If we decide to implement Quidditch-style rules, this is where we
