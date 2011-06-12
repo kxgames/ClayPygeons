@@ -88,7 +88,7 @@ class Sight(Sprite):
         friction = Vector.null()
 
         self.acceleration = force + friction
-        Sprite.update(self, time, disp=True)
+        Sprite.update(self, time)
 
         # Bounce the sight off the walls.
         boundary = self.world.get_map().get_size()
