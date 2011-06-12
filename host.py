@@ -1,25 +1,42 @@
 #!/usr/bin/env python
 
+import settings
 import arguments
-import worlds
 
-def main(settings):
-    world = worlds.Lead(settings)
-    world.setup()
+import pygame
+from pygame.locals import *
+
+from world import Universe
+from postoffice import Hub, Courier
+
+def main(host, port):
+
+    hub = Hub(host, port, settings.player_count)
+    courier = Courier(host, port)
+    universe = Universe(courier, settings)
+
+    hub.setup()
+    courier.setup()
+
+    # This is something of a hacky way to get the post office hub to set up
+    # the universe automatically.
+    hub.listen(universe.setup)
 
     clock = pygame.time.Clock()
     frequency = 40
 
-    while world.still_playing():
-        world.update()
+    while universe.still_playing():
+        universe.update()
+        hub.update(); courier.update()
+
         clock.tick(frequency)
 
 if __name__ == "__main__":
 
-    def module(name):
-        return __import__("settings.%s" % name)
+    host = arguments.option("host", default=settings.host)
+    port = arguments.option("port", default=settings.port, cast=int)
 
-    settings = arguments.option(
-            "settings", default="basic", type=module)
-
-    main(settings)
+    try:
+        main(host, port)
+    except KeyboardInterrupt:
+        print

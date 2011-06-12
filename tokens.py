@@ -5,124 +5,11 @@ from vector import *
 from collisions import *
 from shapes import *
 
-class Lead:
-
-    def __init__(self, host, port, map, sight, targets, parameters):
-        self.greeter = network.Host(host, port)
-        self.connections = []
-
-        self.map = map
-        self.sight = sight
-        self.targets = targets
-        self.parameters = parameters
-
-        self.id = 1
-        self.players = {}
-
-    def __str__(self):
-        return self.parameters["description"]
-
-    def ready_to_play(self):
-        return len(self.players) == self.parameters["number of players"]
-
-    def still_playing(self):
-        return True
-
-    def setup(self):
-        self.greeter.setup()
-
-        while not self.ready_to_play():
-
-            for connection in self.greeter.accept():
-                self.follows[self.id] = connection
-                self.id += 1
-
-                response = lobby.LoginResponse(self)
-                office.send(response)
-
-            for id, connection in self.follows.pairs():
-                for message in connection.recieve():
-                    if isinstance(message, lobby.LoginRequest):
-                        self.players[id] = message.name
-
-            time.sleep(1)
-
-        message = lobby.StartPlaying(self)
-        for connection in self.follows.values():
-            connection.send(message)
-
-    def update(self, time):
-
-        messages = [ (id, message)
-                for message in connection.recieve()
-                for id, connection in self.follows.pairs() ]
-
-        for id, message in messages:
-
-            if isinstance(message, game.TargetLeft):
-                self.target_left(id, message.target)
-
-            elif isinstance(message, game.TargetDestroyed):
-                self.world.target_destroyed(id, message.target)
-
-            else:
-                raise Hub.UnrecognizedMessage(message)
-
-    def target_left(self, origin, target):
-        destination = origin
-        players = self.players.keys()
-
-        while destination == origin:
-            destination = random.choice(players)
-
-        self.target_came(destination, target)
-
-    def target_came(self, destination, target):
-        connection = self.follows[destination]
-        message = game.TargetCame(target)
-
-        connection.send(message)
-
-    def target_destroyed(self, id, target):
-        # Check to see if the game is over.
-        self.player_scored(id, target)
-
-    def player_scored(self, id, points):
-        player = self.players[id]
-        points = target.get_points()
-
-        player.score(points)
-
-        message = game.PlayerScored(id, points)
-        for connection in self.connections.values():
-            connection.send(message)
-
-class Follow(World):
-
-    def __init__(self, systems):
-        self.systems = systems
-
-    def update(self, time):
-        pass
-
-    def setup(self):
-        self.courier = self.systems["courier"]
-
-    def player_scored(self, id, points):
-        pass
-
-    def target_came(self, id, points):
-        pass
-
-    def game_over(self, id, points):
-        pass
-
 class Player:
 
-    def __init__(self, name, sight):
-        self.name = name
+    def __init__(self, address, sight):
+        self.address = address
         self.sight = sight
-
         self.points = 0
 
     def score(self, points):
@@ -134,6 +21,7 @@ class Map:
     targets spawn. """
 
     def __init__(self, world, size):
+        self.world = world
         self.size = size
 
     def update(self, time):

@@ -1,30 +1,28 @@
-import random
-import settings
+from tokens import *
+from messages import game
 
-from vector import *
-from collisions import *
-from shapes import *
+class Universe:
 
-class World:
-    """ Creates, stores, and provides access to all of the game objects. """
+    # Constructor {{{1
+    def __init__(self, courier, settings):
+        self.courier = courier
 
-    def setup(self):
-        pass
+        self.map = None
+        self.map = Map(self, settings.map_size)
 
-    def teardown(self):
-        pass
-        
-    def update(self, time):
-        self.map.update(time)
-        self.sight.update(time)
+        self.sight = None
+        #self.sight = Sight(self, settings.sight_position)
 
-        alive = []
-        for target in self.targets:
-            target.update(time)
-            if target.hitpoints > 0:
-                alive.append(target)
-        self.targets = alive
+        self.targets = []
+        #self.targets = [ Target(self, settings.target_position) ]
 
+        #self.map = Map(self, settings.map_size)
+        #self.sight = Sight(self, settings.sight_position)
+        #self.targets = [ Target(self, settings.target_position) ]
+
+        self.players = {}
+
+    # Attributes {{{1
     def get_map(self):
         return self.map
 
@@ -34,79 +32,29 @@ class World:
     def get_targets(self):
         return self.targets
 
-    def add_target(self, target):
-        self.targets.append(target)
+    def get_players(self):
+        return self.players
+    # }}}1
 
-    def remove_target(self, target):
-        self.targets.remove(target)
+    # Game Loop {{{1
+    def setup(self, addresses):
+        for address in addresses:
+            player = Player(address, self.sight)
+            self.players[address] = player
 
-    def is_playing(self):
-        return True
+        courier = self.courier
+        courier.subscribe(game.TargetLeft, self.target_left)
+        courier.subscribe(game.TargetDestroyed, self.target_destroyed)
 
-class Lead:
-
-    def __init__(self, host, port, map, sight, targets, parameters):
-        # Contains references to the core game systems.
-        self.greeter = network.Host(host, port)
-        self.connections = []
-
-        self.map = map
-        self.sight = sight
-        self.targets = targets
-        self.parameters = parameters
-
-        self.id = 1
-        self.players = {}
-
-    def __str__(self):
-        return self.parameters["description"]
-
-    def ready_to_play(self):
-        return len(self.players) == self.parameters["number of players"]
+        return self
 
     def still_playing(self):
         return True
 
-    def setup(self):
-        self.greeter.setup()
+    def update(self):
+        pass
 
-        while not self.ready_to_play():
-
-            for connection in self.greeter.accept():
-                self.follows[self.id] = connection
-                self.id += 1
-
-                response = lobby.LoginResponse(self)
-                office.send(response)
-
-            for id, connection in self.follows.pairs():
-                for message in connection.recieve():
-                    if isinstance(message, lobby.LoginRequest):
-                        self.players[id] = message.name
-
-            time.sleep(1)
-
-        message = lobby.StartPlaying(self)
-        for connection in self.follows.values():
-            connection.send(message)
-
-    def update(self, time):
-
-        messages = [ (id, message)
-                for message in connection.recieve()
-                for id, connection in self.follows.pairs() ]
-
-        for id, message in messages:
-
-            if isinstance(message, game.TargetLeft):
-                self.target_left(id, message.target)
-
-            elif isinstance(message, game.TargetDestroyed):
-                self.world.target_destroyed(id, message.target)
-
-            else:
-                raise Hub.UnrecognizedMessage(message)
-
+    # Messaging {{{1
     def target_left(self, origin, target):
         destination = origin
         players = self.players.keys()
@@ -122,197 +70,107 @@ class Lead:
 
         connection.send(message)
 
-    def target_destroyed(self, id, target):
-        # Check to see if the game is over.
-        self.player_scored(id, target)
+    def target_destroyed(self, address, target):
 
-    def player_scored(self, id, points):
-        player = self.players[id]
+        self.player_scored(address, target)
+
+        # If we decide to implement Quidditch-style rules, this is where we
+        # would check to see if the snitch had been destroyed.
+
+    def player_scored(self, address, points):
+        player = self.players[address]
         points = target.get_points()
 
         player.score(points)
 
-        message = game.PlayerScored(id, points)
+        message = game.PlayerScored(address, points)
         for connection in self.connections.values():
             connection.send(message)
+    # }}}1
 
-class Follow(World):
+class World:
+    """ Creates, stores, and provides access to all of the game objects. """
 
-    def __init__(self, systems):
-        self.systems = systems
+    # Constructor {{{1
+    def __init__(self, courier):
+        self.courier = courier
 
-    def update(self, time):
-        pass
+        self.map = None
+        self.sight = None
+        self.targets = []
+        self.players = {}
 
-    def setup(self):
-        self.courier = self.systems["courier"]
+        self.finished = False
 
-    def player_scored(self, id, points):
-        pass
+    # Attributes {{{1
+    def get_map(self):
+        return self.map
 
-    def target_came(self, id, points):
-        pass
+    def get_sight(self):
+        return self.sight
 
-    def game_over(self, id, points):
-        pass
+    def get_targets(self):
+        return self.targets
+    # }}}1
 
-class Player:
+    # Game Loop {{{1
+    def setup(self, message):
+        self.map = message.map
+        self.sight = message.sight
+        self.targets = message.targets
+        self.players = message.players
 
-    def __init__(self, name, sight):
-        self.name = name
-        self.sight = sight
+        courier = self.courier
+        courier.subscribe(game.PlayerScored, self.player_scored)
+        courier.subscribe(game.TargetCame, self.target_came)
+        courier.subscribe(game.GameOver, self.game_over)
 
-        self.points = 0
-
-    def score(self, points):
-        self.points += points
-
-class Map:
-    """ Stores information about the game world.  This is just the size of the
-    map right now, but it might eventually include information about how
-    targets spawn. """
-
-    def __init__(self, world, size):
-        self.size = size
-
-    def update(self, time):
-        pass
-
-    def get_size(self):
-        return self.size
-
-class Sprite:
-    """ A parent class for every game object that can move.  This class stores
-    position data and handles basic physics, but it is not meant to be
-    directly instantiated. """
-
-    def __init__(self, position, radius):
-        self.circle = Circle(position, radius)
-        self.velocity = Vector.null()
-        self.acceleration = Vector.null()
+    def still_playing(self):
+        return not self.finished
 
     def update(self, time):
-        # This is the "Velocity Verlet Algorithm".  I learned it in my
-        # computational chemistry class, and it's a better way to integrate
-        # Newton's equations of motions than what we were doing before.
-        self.velocity += self.acceleration * (time / 2)
-        self.circle = Circle.move(self.circle, self.velocity * time)
-        self.velocity += self.acceleration * (time / 2)
+        self.map.update(time)
+        self.sight.update(time)
 
-    def bounce(self, time, boundary):
-        x, y = self.circle.center
-        vx, vy = self.velocity
+        # Iterate through a copy of this list, so targets can be safely
+        # removed.
+        targets = self.targets[:]
 
-        bounce = False
+        for target in targets:
+            target.update(time)
 
-        # Check for collisions against the walls.
-        if y < boundary.top or y > boundary.bottom:
-            bounce = True
-            vy = -vy
+            if target.off_map():
+                self.target_left(target)
+            if target.is_destroyed():
+                self.target_destroyed(target)
 
-        if x < boundary.left or x > boundary.right:
-            bounce = True
-            vx = -vx
+    def teardown(self):
+        pass
 
-        # If there is a bounce, flip the velocity and move back onto the
-        # screen.
-        if bounce:
-            self.velocity = Vector(vx, vy)
-            self.circle = Circle.move(self.circle, self.velocity * time)
+    # Messaging {{{1
+    def target_left(self, target):
+        print "Sending: TargetLeft"
+        message = game.TargetLeft(target)
+        self.courier.deliver(message)
+        self.targets.remove(target)
 
-    def wrap_around(self, boundary):
-        x, y = self.circle.center
+    def target_came(self, target):
+        print "Receiving: TargetCame"
+        self.targets.append(target)
 
-        x = x % boundary.width
-        y = y % boundary.height
+    def target_destroyed(self, target):
+        print "Sending: TargetDestroyed"
+        message = game.TargetDestroyed(target)
+        self.courier.deliver(message)
+        self.targets.remove(target)
 
-        position = Vector(x, y)
-        self.circle = Circle(position, self.circle.radius)
+    def player_scored(self, address, points):
+        print "Receiving: PlayerScored"
+        player = self.players[address]
+        player.score(points)
 
-    def get_position(self):
-        return self.circle.center
+    def game_over(self, address, points):
+        print "Receiving: GameOver"
+        self.finished = True
+    # }}} 1
 
-    def get_velocity(self):
-        return self.velocity
-
-    def get_acceleration(self):
-        return self.acceleration
-
-    def get_radius(self):
-        return self.circle.radius
-
-    def get_circle(self):
-        return self.circle
-
-class Sight(Sprite):
-    """ Represents a player's sight.  The motion of these objects is primarily
-    controlled by the player, but they will bounce off of walls. """
-
-    def __init__(self, world, position):
-        Sprite.__init__(self, position, settings.sight_radius)
-        self.world = world
-
-        self.drag = settings.sight_drag
-        self.power = settings.sight_power
-
-        self.direction = Vector.null()
-
-    def update(self, time):
-        # Set the acceleration.
-        force = self.power * self.direction
-        drag = -self.drag * self.velocity
-
-        self.acceleration = force + drag
-        Sprite.update(self, time)
-
-        # Bounce the sight off the walls.
-        boundary = self.world.get_map().get_size()
-        Sprite.bounce(self, time, boundary)
-
-    def accelerate(self, direction):
-        self.direction = direction
-
-    def shoot(self):
-        for target in self.world.targets:
-            if Collisions.circles_touching(self.circle, target.circle):
-                target.hit()
-
-class Target(Sprite):
-    """ Represents a target that players can shoot at.  These objects will
-    move autonomously in the final version. """
-
-    def __init__(self, world, position):
-        Sprite.__init__(self, position, settings.target_radius)
-        self.world = world
-
-        self.power = settings.target_power
-        self.speed = settings.target_speed
-        self.loopiness = settings.target_loopiness
-        self.hitpoints = settings.target_hitpoints
-
-        self.goal = self.speed * Vector.random()
-
-    def update(self, time):
-        offset = self.loopiness * Vector.random()
-
-        self.goal = self.goal + offset
-        self.goal = self.speed * self.goal.normal
-
-        # The goal is what the velocity should ideally be.  The acceleration
-        # can be computed by finding the difference between the current
-        # velocity and the goal.
-        self.acceleration = self.goal - self.velocity
-
-        # If the acceleration is too fast, then truncate it.
-        if self.acceleration.magnitude > self.power:
-            self.acceleration = self.power * self.acceleration.normal
-
-        # Update the physics as usual.
-        Sprite.update(self, time)
-
-    def hit(self):
-        self.hitpoints -= settings.shot_power
-        print 'Target hit!', self.hitpoints
-
-    def get_hitpoints(self):
-        return self.hitpoints

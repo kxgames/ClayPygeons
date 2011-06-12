@@ -11,7 +11,8 @@ import joystick
 
 class Gui:
     # def __init__(self, world): {{{1
-    def __init__ (self, world):
+    def __init__ (self, courier, world):
+        self.courier = courier
         self.world = world
 
     # def setup(self): {{{1

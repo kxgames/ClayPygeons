@@ -1,70 +1,50 @@
 #!/usr/bin/env python
 
-import settings
-import arguments
+from gui import Gui
+from world import World
+from postoffice import Courier
 
-import game, lobby
+import pygame
+from pygame.locals import *
 
-import protocol
-import callbacks
+def main(host, port):
 
-class Lobby(callbacks.Lobby):
-
-    def __init__(self, host, port, name, world):
-        self.courier = protocol.Courier(host, port, self)
-        self.courier.login(name)
-
-        self.world = world
-        self.finished = False
-
-    def update(self):
-        self.courier.update()
-
-    def finished(self):
-        return self.finished
-
-    def welcome(self, information):
-        print information
-
-    def play(self, settings):
-        # Use settings to set up the world!
-
-        self.world.
-
-        self.finished = True
-
-
-if __name__ == "__main__":
-    
-    # Read several options from the command line.
-    name = arguments.first()
-    host = arguments.option("host", default=settings.host)
-    port = arguments.option("port", default=settings.port, type=int)
-
-    # Construct the core game objects.
-    world = World()
+    # Construct the objects that will run the game.
     courier = Courier(host, port)
-    gui = Gui()
+    world = World(courier)
+    gui = Gui(courier, world)
 
-    game = Game(world, courier, gui)
+    systems = [courier, world, gui]
 
+    # Connect to the server and wait until the game is ready to begin.
+    courier.setup()
+    courier.login(world.setup)
+
+    # Open up a window and get ready to start playing.
     clock = pygame.time.Clock()
     frequency = 40
 
-    # Connect to the server and ait until enough players have connected.
-    # This could take a long time.
-    courier.setup()
-
-    # Create the user interface.  Note that this happens after the network
-    # is set up, so this game will have a text-based "lobby".
     gui.setup()
-
-    # Enter the game loop and start playing!
-    while world.is_playing():
+    
+    # Play the game!
+    while world.still_playing():
         time = clock.tick(frequency) / 1000
-        for system in game:
+        for system in systems:
             system.update(time)
 
-    for system in game:
+    # Exit gracefully.
+    for system in systems:
         system.teardown()
 
+if __name__ == "__main__":
+
+    import arguments
+    import settings
+    
+    host = arguments.option("host", default=settings.host)
+    port = arguments.option("port", default=settings.port, cast=int)
+
+    try:
+        main(host, port)
+    except KeyboardInterrupt:
+        print

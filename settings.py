@@ -3,6 +3,10 @@ from __future__ import division
 from vector import *
 from shapes import *
 
+host = 'localhost'
+port = 11249
+
+player_count = 1
 map_size = Rectangle.from_size(500, 500)
 
 sight_position = map_size.center
