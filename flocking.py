@@ -11,11 +11,17 @@ class Sprite:
     directly instantiated. """
     # Constructor {{{1
 
-    def __init__(self, position, radius):
-        self.circle = Circle(position, radius)
+    def __init__(self):
+        self.circle = None
+        self.behaviors = []
+
         self.velocity = Vector.null()
         self.acceleration = Vector.null()
-        self.behaviors = []
+
+    def setup(self, position, radius, force, speed):
+        self.circle = Circle(position, radius)
+        self.force = force
+        self.speed = speed
 
     # Updates {{{1
     def update(self, time):
@@ -23,7 +29,7 @@ class Sprite:
         # prioritization of each behavior. For these purposes, force and
         # acceleration are basically the same in name.
         remaining_force = self.force
-        for behavior in behaviors:
+        for behavior in self.behaviors:
             ideal_force, weight = behavior.update()
             force = ideal_force * weight
             if force.get_magnitude() <= remaining_force:
@@ -88,6 +94,9 @@ class Sprite:
 
     def get_circle(self):
         return self.circle
+    
+    def get_speed(self):
+        return self.speed
     # }}}1
 
 class Seek:
@@ -115,7 +124,7 @@ class Seek:
 
 class Flee:
     # Flee {{{1
-    def __init__ (self, sprite, weight, target, los=0.0)
+    def __init__ (self, sprite, weight, target, los=0.0):
         self.sprite = sprite
         self.weight = weight
         self.target = target

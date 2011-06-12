@@ -78,7 +78,7 @@ class Sight(Sprite):
         self.world = world
 
         position = world.get_map().place_sight()
-        Sprite.setup(self, position, self.size, 0.0)
+        Sprite.setup(self, position, self.size, self.force, 0.0)
 
     def update(self, time):
         map = self.world.get_map()
@@ -124,7 +124,7 @@ class Quaffle(Sprite):
         self.world = world
 
         position = world.get_map().place_target()
-        Sprite.setup(self, position, self.size, self.speed)
+        Sprite.setup(self, position, self.size, 0.0, self.speed)
 
     def update(self, time):
         # Update the physics as usual.
