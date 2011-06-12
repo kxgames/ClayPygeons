@@ -7,10 +7,10 @@ from postoffice import Courier
 import pygame
 from pygame.locals import *
 
-def main(host, port):
+def main():
 
     # Construct the objects that will run the game.
-    courier = Courier(host, port)
+    courier = Courier()
     world = World(courier)
     gui = Gui(courier, world)
 
@@ -37,14 +37,6 @@ def main(host, port):
         system.teardown()
 
 if __name__ == "__main__":
-
-    import arguments
-    import settings
-    
-    host = arguments.option("host", default=settings.host)
-    port = arguments.option("port", default=settings.port, cast=int)
-
-    try:
-        main(host, port)
+    try: main()
     except KeyboardInterrupt:
         print

@@ -1,24 +1,19 @@
+import settings
+
 from tokens import *
 from messages import game
 
 class Universe:
 
     # Constructor {{{1
-    def __init__(self, courier, settings):
+    def __init__(self, courier):
         self.courier = courier
 
-        self.map = None
-        self.map = Map(self, settings.map_size)
+        self.map = settings.map
+        self.sights = settings.sights
 
-        self.sight = None
-        #self.sight = Sight(self, settings.sight_position)
-
-        self.targets = []
-        #self.targets = [ Target(self, settings.target_position) ]
-
-        #self.map = Map(self, settings.map_size)
-        #self.sight = Sight(self, settings.sight_position)
-        #self.targets = [ Target(self, settings.target_position) ]
+        self.snitch = settings.snitch
+        self.quaffles = settings.quaffles
 
         self.players = {}
 
@@ -26,11 +21,11 @@ class Universe:
     def get_map(self):
         return self.map
 
-    def get_sight(self):
-        return self.sight
+    def get_sights(self):
+        return self.sights
 
     def get_targets(self):
-        return self.targets
+        return self.quaffles
 
     def get_players(self):
         return self.players
@@ -39,7 +34,7 @@ class Universe:
     # Game Loop {{{1
     def setup(self, addresses):
         for address in addresses:
-            player = Player(address, self.sight)
+            player = Player(address)
             self.players[address] = player
 
         courier = self.courier
@@ -95,18 +90,27 @@ class World:
         self.courier = courier
 
         self.map = None
-        self.sight = None
+        self.sights = []
         self.targets = []
         self.players = {}
 
         self.finished = False
 
+    # This method is a hack to prevent the world from ever getting pickled.
+    # This is necessary because most of the game objects contain a reference
+    # to the world, so when they get pickled this also gets pickled.
+    def __getstate__(self):
+        return {}
+
     # Attributes {{{1
     def get_map(self):
         return self.map
 
-    def get_sight(self):
-        return self.sight
+    def get_sight(self, index):
+        return self.sights[index]
+
+    def get_sights(self):
+        return self.sights
 
     def get_targets(self):
         return self.targets
@@ -115,9 +119,16 @@ class World:
     # Game Loop {{{1
     def setup(self, message):
         self.map = message.map
-        self.sight = message.sight
+        self.map.setup(self)
+
+        self.sights = message.sights
         self.targets = message.targets
         self.players = message.players
+
+        for sight in self.sights:
+            sight.setup(self)
+        for target in self.targets:
+            target.setup(self)
 
         courier = self.courier
         courier.subscribe(game.PlayerScored, self.player_scored)
@@ -129,16 +140,16 @@ class World:
 
     def update(self, time):
         self.map.update(time)
-        self.sight.update(time)
+
+        for sight in self.sights:
+            sight.update(time)
 
         # Iterate through a copy of this list, so targets can be safely
         # removed.
-        targets = self.targets[:]
-
-        for target in targets:
+        for target in self.targets[:]:
             target.update(time)
 
-            if target.off_map():
+            if target.off_map(self.map):
                 self.target_left(target)
             if target.is_destroyed():
                 self.target_destroyed(target)
@@ -157,9 +168,9 @@ class World:
         print "Receiving: TargetCame"
         self.targets.append(target)
 
-    def target_destroyed(self, target):
+    def target_destroyed(self, target, sight):
         print "Sending: TargetDestroyed"
-        message = game.TargetDestroyed(target)
+        message = game.TargetDestroyed(target, sight)
         self.courier.deliver(message)
         self.targets.remove(target)
 

@@ -1,13 +1,11 @@
 import sys
+import joystick
 
 import pygame
 from pygame.locals import *
 
 from shapes import *
 from vector import *
-
-import settings
-import joystick
 
 class Gui:
     # def __init__(self, world): {{{1
@@ -32,9 +30,8 @@ class Gui:
 
         # Callback dictionary for joystick event handling.
         joystick_callbacks = {
-                'direction' : self.world.get_sight().accelerate,
-                'shoot' : self.world.get_sight().shoot
-                }
+                'direction' : self.world.get_sight(0).accelerate,
+                'shoot' : self.world.get_sight(0).shoot }
 
         self.joystick = joystick.Joystick(joystick_callbacks)
 
@@ -65,12 +62,10 @@ class Gui:
             pygame.draw.circle(screen, color, position, radius)
 
             # Draw a hitpoint bar
-            hp = target.get_hitpoints()
-            hp_max = settings.target_hitpoints
-            hp_ratio = float(hp)/hp_max
+            hp_ratio = target.get_health()
 
             bar_width = hp_ratio * 2 * radius
-            bar_height = settings.hitpoints_bar_height
+            bar_height = 2
 
             delta = Vector(-radius, -(radius + 2 * bar_height))
             bar_position = (target.get_position() + delta).pygame
@@ -80,13 +75,13 @@ class Gui:
             pygame.draw.rect(screen, (255,0,0), hp_bar)
 
         # After that, draw the sight in the foreground.
-        sight = self.world.get_sight()
+        sight = self.world.get_sight(0)
         position = sight.get_position().pygame
 
         # If the size of the sight is made too small, it starts to look
         # asymmetric.  This probably has to do with the float-to-int
         # conversion and won't be easy to fix.  So stick with large sights.
-        radius = settings.sight_radius; size = int(1.25 * radius)
+        radius = 5 * sight.get_size() + 10; size = int(1.25 * radius)
         color = sight_color; stroke = 2
 
         pygame.draw.circle(screen, color, position, radius, stroke)

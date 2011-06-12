@@ -7,8 +7,9 @@ class TargetLeft(object):
         self.target = target
 
 class TargetDestroyed(object):
-    def __init__(self, target):
+    def __init__(self, target, sight):
         self.target = target
+        self.sight = sight
 
 class PlayerScored(object):
     def __init__(self, address, points):
