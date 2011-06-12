@@ -1,33 +1,23 @@
-from __future__ import division
+import arguments
 
-from vector import *
+from tokens import *
 from shapes import *
 
-host = 'localhost'
-port = 11249
+host = arguments.option("host", default='localhost')
+port = arguments.option("port", default=0, cast=int) + 11249
 
-player_count = 1
-map_size = Rectangle.from_size(500, 500)
+size = Rectangle.from_size(500, 500)
+map = Map(size=size, players=1, points=50, friction=50)
 
-sight_position = map_size.center
-target_position = map_size.center
+sights = [
+        Sight("Rifle", mass=20, force=100, size=2, power=10, points=1),
+        Sight("Shotgun", mass=50, force=100, size=10, power=4, points=1) ]
 
-sight_drag = 0.75
-sight_power = 450
-sight_radius = 24
+snitch = Snitch(size=5, speed=12, health=50, points=50)
+quaffles = [
+        Quaffle(chance=10, size=25, speed=10, health=30, points=6),
+        Quaffle(chance=15, size=15, speed=7, health=20, points=5) ]
 
-shot_power = 20
-
-#sight_images = {
-        #"normal" : pygame.image.load('images/sight-normal.png'),
-        #"firing" : pygame.image.load('images/sight-firing.png') }
-
-target_power = 200
-target_speed = 100
-target_radius = 10
-target_loopiness = 50
-target_hitpoints = 100
-
-hitpoints_bar_height = 2
-
-
+# In the future, we will want to add more types of quaffles.  For example:
+# AntiQuaffle(chance=5, size=3, speed=10, health=5, points=-10)
+# HerdQuaffle(chance=50, size=4, speed=6, health=10, points=1)

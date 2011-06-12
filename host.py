@@ -1,19 +1,16 @@
 #!/usr/bin/env python
 
-import settings
-import arguments
-
 import pygame
 from pygame.locals import *
 
 from world import Universe
 from postoffice import Hub, Courier
 
-def main(host, port):
+def main():
 
-    hub = Hub(host, port, settings.player_count)
-    courier = Courier(host, port)
-    universe = Universe(courier, settings)
+    hub = Hub()
+    courier = Courier()
+    universe = Universe(courier)
 
     hub.setup()
     courier.setup()
@@ -32,11 +29,6 @@ def main(host, port):
         clock.tick(frequency)
 
 if __name__ == "__main__":
-
-    host = arguments.option("host", default=settings.host)
-    port = arguments.option("port", default=settings.port, cast=int)
-
-    try:
-        main(host, port)
+    try: main()
     except KeyboardInterrupt:
         print

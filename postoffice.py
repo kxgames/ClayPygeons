@@ -1,14 +1,14 @@
 import time
-import network
-
 import settings
+
+import network
 from messages import lobby, maintenance
 
 class Hub:
 
-    def __init__(self, host, port, players):
-        self.greeter = network.Host(host, port)
-        self.addresses = range(settings.player_count + 1)
+    def __init__(self):
+        self.greeter = network.Host(settings.host, settings.port)
+        self.addresses = range(settings.map.get_players() + 1)
 
         self.offices = {}
         self.subscriptions = {}
@@ -54,7 +54,7 @@ class Hub:
 
         # If no address is given, deliver the message to all subscribers.
         if address == 0:
-            for office in offices:
+            for office in self.offices:
                 office.send(message)
 
         # Otherwise, only deliver it to the address in question.
@@ -94,8 +94,8 @@ class Courier:
     class UnrecognizedMessage(Exception):
         pass
 
-    def __init__(self, host, port):
-        self.connection = network.Client(host, port)
+    def __init__(self):
+        self.connection = network.Client(settings.host, settings.port)
         self.callbacks = {}
 
     def login(self, callback):
@@ -130,7 +130,7 @@ class Courier:
             request = maintenance.Cancellation(type)
             self.connection.send(request)
 
-    def update(self):
+    def update(self, *ignore):
         for message in self.connection.receive():
             key = type(message)
             callbacks = self.callbacks.get(key, [])
