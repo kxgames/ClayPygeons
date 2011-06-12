@@ -48,18 +48,18 @@ class Hub:
     def cancel(self, office, type):
         self.subscriptions[type].remove(office)
 
-    def deliver(self, message, address):
-        key = type(message)
+    def deliver(self, message):
+        key = type(message.message)
         subscribers = self.subscriptions[key]
 
         # If no address is given, deliver the message to all subscribers.
-        if address == 0:
-            for office in self.offices:
+        if message.address == 0:
+            for office in self.offices.values():
                 office.send(message)
 
         # Otherwise, only deliver it to the address in question.
         else:
-            office = self.offices[address]
+            office = self.offices[message.address]
             if office in subscribers:
                 office.send(message)
 
@@ -84,7 +84,7 @@ class Office:
                 self.hub.cancel(self.address, message.type)
 
             elif isinstance(message, maintenance.Delivery):
-                self.hub.deliver(message.message, message.address)
+                self.hub.deliver(message)
 
             else:
                 raise UnrecognizedMessage()
@@ -132,11 +132,14 @@ class Courier:
 
     def update(self, *ignore):
         for message in self.connection.receive():
-            key = type(message)
+            if not isinstance(message, maintenance.Delivery):
+                continue
+
+            key = type(message.message)
             callbacks = self.callbacks.get(key, [])
 
             for callback in callbacks:
-                callback(message)
+                callback(message.address, message.message)
                 
     def teardown(self):
         self.connection.teardown()
