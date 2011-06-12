@@ -108,9 +108,10 @@ class Quaffle(Sprite):
     """ Represents a target that players can shoot at.  These objects will
     move autonomously in the final version. """
 
-    def __init__(self, size, speed, health, points, chance):
+    def __init__(self, force, size, speed, health, points, chance):
         Sprite.__init__(self)
 
+        self.force = force
         self.size = size
         self.speed = speed
 
@@ -124,11 +125,13 @@ class Quaffle(Sprite):
         self.world = world
 
         position = world.get_map().place_target()
-        Sprite.setup(self, position, self.size, 100.0, self.speed)
+        Sprite.setup(self, position, self.size, self.force, self.speed)
 
         self.behaviors = [
-                Seek(self, 1.0, self.world.get_sight(0), 75)
+                Seek(self, 0.5, self.world.get_sight(0), 100)
                 ]
+                #Lazy(self, 1.0),
+                #Flee(self, 1.0, self.world.get_sight(0), 50),
 
     def update(self, time):
         # Update the physics as usual.
@@ -149,5 +152,5 @@ class Quaffle(Sprite):
 
 class Snitch(Quaffle):
 
-    def __init__(self, size, speed, health, points):
-        Quaffle.__init__(self, size, speed, health, points, 0)
+    def __init__(self, force, size, speed, health, points):
+        Quaffle.__init__(self, force, size, speed, health, points, 0)

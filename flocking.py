@@ -145,3 +145,15 @@ class Flee:
         return force, self.weight
     # }}}1
 
+class Lazy:
+    def __init__(self, sprite, weight):
+        self.sprite = sprite
+        self.weight = weight
+    def update(self):
+        sprite_velocity = self.sprite.get_velocity()
+        print sprite_velocity
+        if sprite_velocity.magnitude > 0:
+            force = -1.0 * sprite_velocity
+        else:
+            force = Vector.null()
+        return force
