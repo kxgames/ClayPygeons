@@ -124,14 +124,18 @@ class Quaffle(Sprite):
         self.world = world
 
         position = world.get_map().place_target()
-        Sprite.setup(self, position, self.size, 0.0, self.speed)
+        Sprite.setup(self, position, self.size, 100.0, self.speed)
+
+        self.behaviors = [
+                Seek(self, 1.0, self.world.get_sight(0), 75)
+                ]
 
     def update(self, time):
         # Update the physics as usual.
         Sprite.update(self, time)
 
     def injure(self, sight):
-        self.health -= sight.get_power()
+        self.health -= sight.power
 
     def off_map(self, map):
         size = map.get_size()

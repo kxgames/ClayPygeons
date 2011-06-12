@@ -32,11 +32,11 @@ class Sprite:
         for behavior in self.behaviors:
             ideal_force, weight = behavior.update()
             force = ideal_force * weight
-            if force.get_magnitude() <= remaining_force:
-                remaining_force -= force.get_magnitude()
+            if force.magnitude <= remaining_force:
+                remaining_force -= force.magnitude
                 self.acceleration += force
             elif remaining_force > 0:
-                final_force = force.get_normal() * remaining_force
+                final_force = force.normal * remaining_force
                 self.acceleration += final_force
                 break
             else:
@@ -107,9 +107,9 @@ class Seek:
         self.target = target
         self.los = los
     def update (self):
-        desired_direction = target.get_position() - self.sprite.get_position()
+        desired_direction = self.target.get_position() - self.sprite.get_position()
         if 0.0 == self.los or desired_direction.magnitude <= self.los:
-            desired_normal = desired_direction.normal()
+            desired_normal = desired_direction.normal
             desired_velocity = desired_normal * self.sprite.get_speed()
             force = desired_velocity - self.sprite.get_velocity()
         else:
@@ -130,7 +130,7 @@ class Flee:
         self.target = target
         self.los = los
     def update (self):
-        desired_direction = self.sprite.get_position() - target.get_position()
+        desired_direction = self.sprite.get_position() - self.target.get_position()
         if 0.0 == self.los or desired_direction.magnitude <= self.los:
             desired_normal = desired_direction.normal
             desired_velocity = desired_normal * self.sprite.get_speed()
