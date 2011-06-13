@@ -128,10 +128,9 @@ class Quaffle(Sprite):
         Sprite.setup(self, position, self.size, self.force, self.speed)
 
         self.behaviors = [
-                Seek(self, 0.5, self.world.get_sight(0), 100)
+                Flee(self, 1.0, self.world.get_sight(0), 100),
                 ]
-                #Lazy(self, 1.0),
-                #Flee(self, 1.0, self.world.get_sight(0), 50),
+                #Seek(self, 1.0, self.world.get_sight(0), 100)
 
     def update(self, time):
         # Update the physics as usual.
