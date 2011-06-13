@@ -1,9 +1,5 @@
-import settings
-
 from vector import *
 from shapes import *
-
-
 
 class Sprite:
     """ A parent class for every game object that can move.  This class stores
@@ -137,7 +133,10 @@ class Flee:
     def update (self):
         desired_direction = self.sprite.get_position() - self.target.get_position()
         if 0.0 == self.los or desired_direction.magnitude <= self.los:
-            desired_normal = desired_direction.normal
+            try:
+                desired_normal = desired_direction.normal
+            except NullVectorError:
+                desired_normal = Vector.null()
             desired_velocity = desired_normal * self.sprite.get_speed()
             force = desired_velocity - self.sprite.get_velocity()
         else:

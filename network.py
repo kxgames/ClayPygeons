@@ -46,7 +46,7 @@ class Connection(object):
         """ Gracefully close the connection and prevent this object from being
         used before the connection is explicitly reestablished. """
 
-        self.socket.shutdown(socket.SHUT_RDWR)
+        #self.socket.shutdown(socket.SHUT_RDWR)
         self.socket.close()
 
         self.poll = None
