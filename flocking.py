@@ -14,14 +14,18 @@ class Sprite:
     def __init__(self):
         self.circle = None
         self.behaviors = []
+        self.facing = Vector.null()
 
         self.velocity = Vector.null()
         self.acceleration = Vector.null()
+        self.behavior_acceleration = Vector.null()
 
-    def setup(self, position, radius, force, speed):
+    def setup(self, position, radius, force=0.0, speed=0.0,
+            facing=Vector.random()):
         self.circle = Circle(position, radius)
         self.force = force
         self.speed = speed
+        self.facing = facing.normal
 
     # Updates {{{1
     def update(self, time):
@@ -47,9 +51,19 @@ class Sprite:
         # computational chemistry class, and it's a better way to integrate
         # Newton's equations of motions than what we were doing before.
         self.velocity += acceleration * (time / 2)
+        self.check_velocity()
         self.circle = Circle.move(self.circle, self.velocity * time)
         self.velocity += acceleration * (time / 2)
+        self.check_velocity()
 
+        if self.velocity.magnitude > 0.00001:
+            self.facing = self.velocity.normal
+
+        self.behavior_acceleration = acceleration
+
+    def check_velocity(self):
+        if self.velocity.magnitude > self.speed:
+            self.velocity = self.velocity.normal * self.speed
 
     def bounce(self, time, boundary):
         x, y = self.circle.center
@@ -99,15 +113,38 @@ class Sprite:
     
     def get_speed(self):
         return self.speed
+
+    def get_facing(self):
+        return self.facing
+    
+    def set_position(self, position):
+        radius = self.circle.get_radius()
+        self.circle = Circle(position, radius)
+
+    def get_behavior_acceleration(self):
+        return self.behavior_acceleration
     # }}}1
 
-class Seek:
-    # Seek {{{1
-    def __init__ (self, sprite, weight, target, los=0.0):
+class Base:
+    # The Base class for all behavior classes.
+    # Base {{{1
+    def __init__ (self, sprite, weight):
         self.sprite = sprite
         self.weight = weight
+        self.last_force = Vector.null()
+
+    def get_last_force(self):
+        return self.last_force
+    # }}}1
+
+class Seek(Base):
+    # Seek {{{1
+    def __init__ (self, sprite, weight, target, los=0.0):
+        Base.__init__(self, sprite, weight)
+
         self.target = target
         self.los = los
+
     def update (self):
         desired_direction = self.target.get_position() - self.sprite.get_position()
         if 0.0 == self.los or desired_direction.magnitude <= self.los:
@@ -121,16 +158,18 @@ class Seek:
         # calculations to find delta_velocity. delta_velocity = acceleration *
         # time. The time step will be dealt with later and, for our purposes,
         # acceleration is basically the same as force. 
+        self.last_force = force
         return force, self.weight
     # }}}1
 
-class Flee:
+class Flee(Base):
     # Flee {{{1
     def __init__ (self, sprite, weight, target, los=0.0):
-        self.sprite = sprite
-        self.weight = weight
+        Base.__init__(self, sprite, weight)
+
         self.target = target
         self.los = los
+
     def update (self):
         desired_direction = self.sprite.get_position() - self.target.get_position()
         if 0.0 == self.los or desired_direction.magnitude <= self.los:
@@ -144,5 +183,44 @@ class Flee:
         # calculations to find delta_velocity. delta_velocity = acceleration *
         # time. The time step will be dealt with later and, for our purposes,
         # acceleration is basically the same as force. 
+        self.last_force = force
         return force, self.weight
     # }}}1
+
+class Wander(Base):
+    # Wander {{{1
+    def __init__ (self, sprite, weight, radius, distance, jitter):
+        Base.__init__(self, sprite, weight)
+
+        self.target = Sprite()
+        #self.seek_target = Sprite()
+        #self.seek = Seek(sprite, weight, self.seek_target)
+
+        self.r = radius
+        self.d = distance
+        self.j = jitter
+
+        circle_position = sprite.get_facing() * radius
+        self.target.setup(circle_position, 1)
+
+        #self.seek_target.setup(circle_position, 1)
+
+    def update(self): 
+        circle_position = self.target.get_position()
+
+        jitter = Vector.random() * self.j
+        wander_position = circle_position + jitter
+        new_circle_position = wander_position.normal * self.r
+
+        self.target.set_position(new_circle_position)
+
+        facing_offset = self.sprite.get_facing() * self.d
+        relative_position = new_circle_position + facing_offset
+        
+        #self.seek_target.set_position(relative_position)
+
+        self.last_force = relative_position
+        #return self.seek.update()
+        return relative_position, self.weight
+    # }}}1
+

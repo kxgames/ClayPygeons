@@ -55,11 +55,11 @@ class Gui:
 
         # First, draw all the targets in the background.
         for target in self.world.get_targets():
-            position = target.get_position().pygame
+            position = target.get_position()
             radius = target.get_radius()
             color = target_color
 
-            pygame.draw.circle(screen, color, position, radius)
+            pygame.draw.circle(screen, color, position.pygame, radius)
 
             # Draw a hitpoint bar
             hp_ratio = target.get_health()
@@ -68,11 +68,26 @@ class Gui:
             bar_height = 2
 
             delta = Vector(-radius, -(radius + 2 * bar_height))
-            bar_position = (target.get_position() + delta).pygame
+            bar_position = (position + delta).pygame
 
             hp_bar = Rect(bar_position, (bar_width, bar_height))
 
             pygame.draw.rect(screen, (255,0,0), hp_bar)
+
+            # Draw the velocity and acceleration vectors.
+            velocity = target.get_velocity()
+            if velocity.magnitude>0:
+                velocity_start = velocity.normal * (radius + 5) + position
+                velocity_end = velocity_start + velocity * 5
+                pygame.draw.line(screen, (0,0,255), velocity_start.pygame,
+                    velocity_end.pygame)
+
+            acceleration = target.get_behavior_acceleration()
+            if acceleration.magnitude>0:
+                acceleration_start = acceleration.normal * (radius + 5) + position
+                acceleration_end = acceleration_start + acceleration * 5
+                pygame.draw.line(screen, (0,255,0), acceleration_start.pygame,
+                        acceleration_end.pygame)
 
         # After that, draw the sight in the foreground.
         sight = self.world.get_sight(0)
