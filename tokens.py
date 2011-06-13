@@ -149,6 +149,9 @@ class Quaffle(Sprite):
     def get_health(self):
         return self.health / self.max_health
 
+    def get_points(self):
+        return self.points
+
 class Snitch(Quaffle):
 
     def __init__(self, force, size, speed, health, points):

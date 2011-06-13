@@ -30,7 +30,7 @@ class Hub:
 
     def greet(self):
         for connection in self.greeter.accept():
-            address = self.addresses.pop() + 1
+            address = self.addresses.pop(0) + 1
             office = Office(self, address, connection)
 
             self.offices[address] = office
@@ -52,7 +52,7 @@ class Hub:
         key = type(postcard)
         subscribers = self.subscriptions[key]
 
-        message = maintenance.Delivery(postcard, sender, address)
+        message = maintenance.Delivery(postcard, address, sender)
 
         # If no address is given, deliver the message to all subscribers.
         if address == 0:
@@ -61,9 +61,8 @@ class Hub:
 
         # Otherwise, only deliver it to the address in question.
         else:
-            office = self.offices[message.address]
-            if office in subscribers:
-                office.send(message)
+            office = self.offices[address]
+            office.send(message)
 
 class Office:
     

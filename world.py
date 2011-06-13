@@ -3,6 +3,9 @@ import settings
 from tokens import *
 from messages import game
 
+# Make an address class to wrap integer address numbers.  It wouldn't be much
+# more to pickle, but it would give some extra safety.
+
 class Universe:
 
     # Constructor {{{1
@@ -51,8 +54,7 @@ class Universe:
 
     # Messaging {{{1
     def target_left(self, sender, address, message):
-        print "Receiving: TargetLeft"
-        destination = address
+        destination = sender
         players = self.players.keys()
 
         # Make sure the message isn't sent to the courier running on a server,
@@ -62,20 +64,17 @@ class Universe:
         # Actually, this doesn't work at all.  The post office doesn't know
         # the sender's address, so there's no way to avoid potentially sending
         # the message right back to the sender.
-        while destination in (address, 1):
+        while destination in (0, 1, sender):
             destination = random.choice(players)
 
         self.target_came(destination, message.target)
 
     def target_came(self, destination, target):
-        print "Sending: TargetCame"
-        print "   destination =", destination
         message = game.TargetCame(target)
         self.courier.deliver(message, destination)
 
     def target_destroyed(self, sender, address, message):
-        print "Receiving: TargetDestroyed"
-        self.player_scored(sender, message.target)
+        self.player_scored(sender, message.target.get_points())
 
         # If we decide to implement Quidditch-style rules, this is where we
         # would check to see if the snitch had been destroyed.
@@ -84,12 +83,11 @@ class Universe:
             message = GameOver(self)
             self.courier.deliver(message)
 
-    def player_scored(self, address, points):
-        print "Sending: PlayerScored"
-        player = self.players[address]
+    def player_scored(self, sender, points):
+        player = self.players[sender]
         player.score(points)
 
-        message = game.PlayerScored(address, points)
+        message = game.PlayerScored(sender, points)
         self.courier.deliver(message)
 
     # }}}1
@@ -164,35 +162,33 @@ class World:
             if target.off_map(self.map):
                 self.target_left(target)
             if target.is_destroyed():
-                self.target_destroyed(target)
+                self.target_destroyed(target, self.get_sight(0))
 
     def teardown(self):
         pass
 
     # Messaging {{{1
     def target_left(self, target):
-        print "Sending: TargetLeft"
         message = game.TargetLeft(target)
         self.courier.deliver(message)
         self.targets.remove(target)
 
     def target_came(self, sender, address, message):
-        print "Receiving: TargetCame"
-        print "    message =", message
-        print "    target =", message.target
-        position = self.map.place_target()
-        message.target.set_position(position)
-        self.targets.append(message.target)
+        target = message.target
+        boundary = self.map.get_size()
+
+        position = self.map.place_sight()
+        target.set_position(position)
+
+        self.targets.append(target)
 
     def target_destroyed(self, target, sight):
-        print "Sending: TargetDestroyed"
         message = game.TargetDestroyed(target, sight)
         self.courier.deliver(message)
         self.targets.remove(target)
 
     def player_scored(self, sender, address, message):
-        print "Receiving: PlayerScored"
-        player = self.players[address]
+        player = self.players[sender]
         player.score(message.points)
 
     def game_over(self, sender, address, message):
