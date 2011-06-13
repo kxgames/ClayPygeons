@@ -99,6 +99,9 @@ class Sprite:
     def get_position(self):
         return self.circle.center
 
+    def set_position(self, position):
+        self.circle = Circle.move(self.circle, position - self.circle.center)
+
     def get_velocity(self):
         return self.velocity
 

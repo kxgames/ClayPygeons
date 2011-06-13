@@ -1,4 +1,4 @@
-class StartPlaying:
+class StartPlaying(object):
     def __init__(self, universe):
         self.map = universe.get_map()
         self.sights = universe.get_sights()
