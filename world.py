@@ -1,3 +1,6 @@
+from __future__ import division
+
+import copy
 import settings
 
 from tokens import *
@@ -19,6 +22,9 @@ class Universe:
         self.quaffles = settings.quaffles
 
         self.players = {}
+        self.targets = {}
+
+        self.finished = False
 
     # Attributes {{{1
     def get_map(self):
@@ -27,8 +33,8 @@ class Universe:
     def get_sights(self):
         return self.sights
 
-    def get_targets(self):
-        return self.quaffles
+    def get_targets(self, address):
+        return self.targets[address]
 
     def get_players(self):
         return self.players
@@ -36,10 +42,40 @@ class Universe:
 
     # Game Loop {{{1
     def setup(self, addresses):
+
+        self.points = 0
+
+        # Associate each of the addresses with players.
         for address in addresses:
             player = Player(address)
             self.players[address] = player
 
+        # Assign quaffles to each player.
+        normalization = 0
+        for quaffle in self.quaffles:
+            normalization += quaffle.get_chance()
+
+        for address in addresses:
+            points = 0
+            self.targets[address] = []
+
+            # Skip the degenerate server-side player.
+            if address == 1:
+                continue
+
+            while points < self.map.get_points() / 2:
+
+                threshold = random.random() * normalization
+                target = random.choice(self.quaffles)
+
+                if target.get_chance() > threshold:
+                    target = copy.copy(target)
+                    self.targets[address].append(target)
+
+                    points += target.get_points()
+                    self.points += target.get_points()
+
+        # Prepare to receive messages.
         courier = self.courier
         courier.subscribe(game.TargetLeft, self.target_left)
         courier.subscribe(game.TargetDestroyed, self.target_destroyed)
@@ -47,7 +83,7 @@ class Universe:
         return self
 
     def still_playing(self):
-        return True
+        return not self.finished
 
     def update(self):
         pass
@@ -60,10 +96,6 @@ class Universe:
         # Make sure the message isn't sent to the courier running on a server,
         # which will always have the first address.  This is a serious hack,
         # but the alternative is writing a full lobby.
-        #
-        # Actually, this doesn't work at all.  The post office doesn't know
-        # the sender's address, so there's no way to avoid potentially sending
-        # the message right back to the sender.
         while destination in (0, 1, sender):
             destination = random.choice(players)
 
@@ -74,13 +106,52 @@ class Universe:
         self.courier.deliver(message, destination)
 
     def target_destroyed(self, sender, address, message):
-        self.player_scored(sender, message.target.get_points())
+        destroyed = message.target
+        points = destroyed.get_points()
 
-        # If we decide to implement Quidditch-style rules, this is where we
-        # would check to see if the snitch had been destroyed.
-        if False:
+        self.player_scored(sender, destroyed.get_points())
+        self.points -= points
+
+        print "Receiving: TargetDestroyed."
+        print "    points = %d / %d" % (self.points, self.map.get_points())
+
+        normalization = 0
+        for target in self.quaffles + [self.snitch]:
+            normalization += target.get_chance()
+
+        # Create a new target once enough targets have been destroyed.
+        while self.points < self.map.get_points():
+            threshold = random.random() * normalization
+            next = random.choice(self.quaffles + [self.snitch])
+
+            if next.get_chance() > threshold:
+                addresses = self.players.keys()[:]
+                addresses.remove(1)
+
+                address = random.choice(addresses)
+
+                self.points += next.get_points()
+                self.target_came(address, next)
+
+                message = "Snitch!" if isinstance(next, Snitch) else "Quaffle."
+
+                print "Sending: New %s" % message
+                print "    points = %d / %d" % (self.points, self.map.get_points())
+
+        # The game ends once the Snitch is destroyed.
+        if isinstance(destroyed, Snitch):
             print "Sending: GameOver"
-            message = GameOver(self)
+
+            points = 0
+            winner = None
+
+            # Figure out which player has more points.
+            for player in self.players.values():
+                if points < player.get_points():
+                    winner = player
+                    points = player.get_points()
+
+            message = game.GameOver(winner)
             self.courier.deliver(message)
 
     def player_scored(self, sender, points):
@@ -177,6 +248,11 @@ class World:
         target = message.target
         boundary = self.map.get_size()
 
+        # Another hack: Since any newly created targets won't have been set up
+        # yet and any existing targets will have the wrong world class, I have
+        # to call the setup function again. 
+        target.setup(self)
+
         position = self.map.place_sight()
         target.set_position(position)
 
@@ -192,7 +268,7 @@ class World:
         player.score(message.points)
 
     def game_over(self, sender, address, message):
-        print "Receiving: GameOver"
+        print "Game over.  Player #%D won." % message.winner
         self.finished = True
     # }}} 1
 

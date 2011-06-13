@@ -24,8 +24,8 @@ class Hub:
         players = [address for address in self.offices.keys()]
         universe = start_playing(players)
 
-        message = lobby.StartPlaying(universe)
-        for office in self.offices.values():
+        for address, office in self.offices.items():
+            message = lobby.StartPlaying(universe, address)
             office.send(message)
 
     def greet(self):

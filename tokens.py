@@ -1,5 +1,4 @@
 import random
-import settings
 
 from vector import *
 from collisions import *
@@ -14,6 +13,9 @@ class Player:
 
     def score(self, points):
         self.points += points
+
+    def get_points(self):
+        return self.points
 
 class Map:
     """ Stores information about the game world.  This currently includes the size
@@ -85,7 +87,7 @@ class Sight(Sprite):
 
         # Set the acceleration.
         force = self.force * self.direction
-        friction = Vector.null()
+        friction = -self.mass * self.velocity   # This is actually drag.
 
         self.acceleration = force + friction
         Sprite.update(self, time)
@@ -153,7 +155,10 @@ class Quaffle(Sprite):
     def get_points(self):
         return self.points
 
+    def get_chance(self):
+        return self.chance
+
 class Snitch(Quaffle):
 
-    def __init__(self, force, size, speed, health, points):
-        Quaffle.__init__(self, force, size, speed, health, points, 0)
+    def __init__(self, force, size, speed, health, points, chance):
+        Quaffle.__init__(self, force, size, speed, health, points, chance)

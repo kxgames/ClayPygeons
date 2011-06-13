@@ -7,6 +7,8 @@ from pygame.locals import *
 from shapes import *
 from vector import *
 
+from tokens import Snitch
+
 class Gui:
     # def __init__(self, world): {{{1
     def __init__ (self, courier, world):
@@ -21,6 +23,8 @@ class Gui:
 
         self.size = self.map.get_size().get_pygame().size
         self.screen = pygame.display.set_mode(self.size)
+
+        self.font = pygame.font.Font(None, 20)
 
         if pygame.joystick.get_count() == 0:
             print "No joystick! Aborting...."
@@ -48,7 +52,11 @@ class Gui:
     def draw(self, time):
         background_color = Color("black")
         sight_color = Color("white")
-        target_color = Color("red")
+
+        quaffle_color = Color("red")
+        snitch_color = Color("yellow")
+
+        text_color = Color("green")
 
         screen = self.screen
         screen.fill(background_color)
@@ -57,7 +65,7 @@ class Gui:
         for target in self.world.get_targets():
             position = target.get_position()
             radius = target.get_radius()
-            color = target_color
+            color = snitch_color if isinstance(target, Snitch) else quaffle_color
 
             pygame.draw.circle(screen, color, position.pygame, radius)
 
@@ -88,6 +96,12 @@ class Gui:
                 acceleration_end = acceleration_start + acceleration * 5
                 pygame.draw.line(screen, (0,255,0), acceleration_start.pygame,
                         acceleration_end.pygame)
+
+            # Draw the number of points this target is worth.
+            points = str(target.get_points())
+            text = self.font.render(points, True, text_color)
+
+            screen.blit(text, position.pygame)
 
         # After that, draw the sight in the foreground.
         sight = self.world.get_sight(0)
