@@ -10,18 +10,18 @@ class Sprite:
     def __init__(self):
         self.circle = None
         self.behaviors = []
-        self.facing = Vector.null()
+        self.facing = Vector.random()
 
         self.velocity = Vector.null()
         self.acceleration = Vector.null()
         self.behavior_acceleration = Vector.null()
 
-    def setup(self, position, radius, force=0.0, speed=0.0,
-            facing=Vector.random()):
+    def setup(self, position, radius, force=0.0, speed=0.0, facing=Vector.null()):
         self.circle = Circle(position, radius)
         self.force = force
         self.speed = speed
-        self.facing = facing.normal
+        if not facing == Vector.null():
+            self.facing = facing.normal
 
     # Updates {{{1
     def update(self, time):
@@ -57,10 +57,6 @@ class Sprite:
 
         self.behavior_acceleration = acceleration
 
-    def check_velocity(self):
-        if self.velocity.magnitude > self.speed:
-            self.velocity = self.velocity.normal * self.speed
-
     def bounce(self, time, boundary):
         x, y = self.circle.center
         vx, vy = self.velocity
@@ -91,6 +87,13 @@ class Sprite:
         position = Vector(x, y)
         self.circle = Circle(position, self.circle.radius)
 
+    # Methods {{{1
+    def check_velocity(self):
+        if self.velocity.magnitude > self.speed:
+            self.velocity = self.velocity.normal * self.speed
+    def add_behavior(self, behavior):
+        self.behaviors.append(behavior)
+
     # Attributes {{{1
     def get_position(self):
         return self.circle.center
@@ -112,6 +115,9 @@ class Sprite:
     
     def get_speed(self):
         return self.speed
+
+    def get_behaviors(self):
+        return self.behaviors
 
     def get_facing(self):
         return self.facing
@@ -202,12 +208,12 @@ class Wander(Base):
         self.d = distance
         self.j = jitter
 
-        circle_position = sprite.get_facing() * radius
+        circle_position = Vector.random() * radius
         self.target.setup(circle_position, 1)
 
         #self.seek_target.setup(circle_position, 1)
 
-    def update(self): 
+    def update(self):
         circle_position = self.target.get_position()
 
         jitter = Vector.random() * self.j

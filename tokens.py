@@ -129,11 +129,9 @@ class Quaffle(Sprite):
         position = world.get_map().place_target()
         Sprite.setup(self, position, self.size, self.force, self.speed)
 
-        self.behaviors = [
-                Wander(self, 1, 35, 1, 7)
-                ]
-                #Seek(self, 1.0, self.world.get_sight(0), 100)
-                #Flee(self, 1.0, self.world.get_sight(0), 100)
+        self.add_behavior (Wander(self, 1, 35, 1, 7))
+        #self.add_behavior (Seek(self, 1.0, self.world.get_sight(0), 100))
+        #self.add_behavior (Flee(self, 1.0, self.world.get_sight(0), 100))
 
     def update(self, time):
         # Update the physics as usual.
