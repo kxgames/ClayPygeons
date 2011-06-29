@@ -94,6 +94,9 @@ class Sprite:
     def add_behavior(self, behavior):
         self.behaviors.append(behavior)
 
+    def remove_behavior(self, behavior):
+        self.behaviors.remove(behavior)
+
     # Attributes {{{1
     def get_position(self):
         return self.circle.center
@@ -129,6 +132,15 @@ class Sprite:
     def get_behavior_acceleration(self):
         return self.behavior_acceleration
     # }}}1
+
+class DummyTarget (Sprite):
+    # A simple way to make a dummy target. Has position and size, but no motion.
+    # DummyTarget {{{1
+    def __init__(self, position, radius):
+        Sprite.__init__(self)
+        self.setup(position, radius)
+    # }}}1
+
 
 class Base:
     # The Base class for all behavior classes.
@@ -232,3 +244,35 @@ class Wander(Base):
         return relative_position, self.weight
     # }}}1
 
+class Arrive(Base):
+    # Arrive {{{1
+    def __init__ (self, sprite, weight, target, los=0.0, urgency=0.3):
+        Base.__init__(self, sprite, weight)
+
+        self.target = target
+        self.los = los
+        if urgency > 10.0: urgency = 10.0
+        elif urgency < 0.0: urgency = 0.0
+        self.urgency = urgency
+
+    def update (self):
+        desired_direction = self.target.get_position() - self.sprite.get_position()
+        max_speed = self.sprite.get_speed()
+        if 0.0 == self.los or desired_direction.magnitude <= self.los:
+            desired_velocity = desired_direction * self.urgency
+            if desired_velocity.magnitude > max_speed:
+                desired_velocity = max_speed * desired_direction.normal
+            force = desired_velocity - self.sprite.get_velocity()
+        else:
+            force = Vector.null()
+
+        # Returns a force, not velocity. Velocities are used in these
+        # calculations to find delta_velocity. delta_velocity = acceleration *
+        # time. The time step will be dealt with later and, for our purposes,
+        # acceleration is basically the same as force. 
+        self.last_force = force
+        return force, self.weight
+
+    def get_target(self):
+        return self.target
+    # }}}1
